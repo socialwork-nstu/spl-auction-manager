@@ -1,109 +1,36 @@
-const SUPABASE_URL = "https://vwsodzsimnrvigrxeusr.supabase.co";
-const SUPABASE_KEY = "sb_publishable_nV6AWGiuN2asXdZFjSIYBg_4BNp7DdD";
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-const $ = id => document.getElementById(id);
-const fmt = n => "৳" + Number(n || 0).toLocaleString("en-BD");
-const ids = {football:"11111111-1111-4111-8111-111111111111", cricket:"22222222-2222-4222-8222-222222222222"};
-let auctionId = null, auctionTitle = "", players = [], teams = [], state = null, settings = null, currentPlayer = null, paused = false;
-
-function show(view){["loginView","auctionView","dashboardView"].forEach(id=>$(id).classList.toggle("hidden",id!==view));$("logoutBtn").classList.toggle("hidden",view==="loginView");}
-function msg(text, bad=false){$("notice").textContent=text;$("notice").style.color=bad?"#b33":"#247448";}
-async function checkAdmin(){
-  const {data:{session}}=await db.auth.getSession();
-  if(!session){show("loginView");return;}
-  const {data,error}=await db.rpc("is_spl_admin");
-  if(error||data!==true){await db.auth.signOut();$("loginMsg").textContent="This account is not authorized as an SPL admin.";show("loginView");return;}
-  show("auctionView");
-}
-$("loginForm").addEventListener("submit",async e=>{e.preventDefault();$("loginMsg").textContent="Signing in...";const {error}=await db.auth.signInWithPassword({email:$("email").value,password:$("password").value});if(error){$("loginMsg").textContent=error.message;return;}await checkAdmin();});
-$("logoutBtn").onclick=async()=>{await db.auth.signOut();show("loginView");};
-document.querySelectorAll(".auction-card").forEach(btn=>btn.onclick=()=>openAuction(btn.dataset.auction,btn.dataset.auction===ids.football?"Football Auction":"Cricket Auction"));
-$("backBtn").onclick=()=>show("auctionView");
-
-async function openAuction(id,title){
-  auctionId=id;auctionTitle=title;$("auctionTitle").textContent=title;show("dashboardView");msg("Loading auction...");
-  const [t,p,s,g]=await Promise.all([
-    db.from("teams").select("*").eq("auction_id",id).order("created_at"),
-    db.from("players").select("*").eq("auction_id",id).order("created_at",{ascending:false}),
-    db.from("auction_state").select("*").eq("auction_id",id).maybeSingle(),
-    db.from("auction_settings").select("*").eq("auction_id",id).maybeSingle()
-  ]);
-  const err=t.error||p.error||s.error||g.error;if(err){msg(err.message,true);return;}
-  teams=t.data||[];players=p.data||[];state=s.data;settings=g.data;paused=!!state?.is_paused;
-  render();msg("Auction data loaded.");
-}
-function render(){
-  $("sessionStatus").textContent=paused?"PAUSED":"READY";
-  $("teamStats").innerHTML=teams.map(team=>`<div class="stat"><small>${esc(team.name)}</small><b>${fmt(team.remaining_budget)}</b><small>${players.filter(p=>p.team_id===team.id&&p.status==="sold").length} players sold</small></div>`).join("");
-  $("leadingTeam").innerHTML='<option value="">Select team</option>'+teams.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join("");
-  renderPlayers();renderTeams();renderCurrent();
-  $("pauseBtn").textContent=paused?"Resume":"Pause";
-}
-function renderPlayers(){
- const q=$("playerSearch").value.toLowerCase(),st=$("statusFilter").value;
- $("playersBody").innerHTML=players.filter(p=>(p.name||"").toLowerCase().includes(q)&&(st==="all"||p.status===st)).map(p=>`<tr><td><b>${esc(p.name)}</b></td><td>${p.category}</td><td>${fmt(p.base_price)}</td><td><span class="tag">${p.status}</span></td><td><button class="secondary small" data-edit="${p.id}">Edit</button> <button class="secondary small" data-select="${p.id}" ${p.status!=="available"?"disabled":""}>Select</button></td></tr>`).join("")||'<tr><td colspan="5">No players found.</td></tr>';
- document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>editPlayer(b.dataset.edit));
- document.querySelectorAll("[data-select]").forEach(b=>b.onclick=()=>selectPlayer(b.dataset.select));
-}
-function renderTeams(){
- $("teamsEditor").innerHTML=teams.map(t=>`<div class="team-edit"><label>Team name<input data-team-name="${t.id}" value="${esc(t.name)}"></label><label>Budget (BDT)<input data-team-budget="${t.id}" type="number" min="0" value="${Number(t.initial_budget)}"></label><button class="secondary small" data-team-save="${t.id}">Save team</button></div>`).join("");
- document.querySelectorAll("[data-team-save]").forEach(b=>b.onclick=()=>saveTeam(b.dataset.teamSave));
-}
-function renderCurrent(){
- currentPlayer=players.find(p=>p.id===state?.current_player_id)||null;
- $("currentPlayer").innerHTML=currentPlayer?`<div class="avatar">${esc(currentPlayer.name.slice(0,2).toUpperCase())}</div><h3>${esc(currentPlayer.name)}</h3><p class="muted">Category ${currentPlayer.category} · Base ${fmt(currentPlayer.base_price)}</p>`:'<div class="avatar">SPL</div><h3>No player selected</h3><p class="muted">Select an available player from the list.</p>';
- $("currentBid").textContent=fmt(state?.current_bid||0);
- $("bidBtn").disabled=!currentPlayer||paused;$("soldBtn").disabled=!currentPlayer||paused;$("unsoldBtn").disabled=!currentPlayer||paused;
- if(state?.leading_team_id)$("leadingTeam").value=state.leading_team_id;
-}
-function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
-async function selectPlayer(id){
- const p=players.find(x=>x.id===id);if(!p)return;
- const {error}=await db.from("auction_state").update({current_player_id:id,leading_team_id:null,current_bid:0,is_paused:false,updated_at:new Date().toISOString()}).eq("auction_id",auctionId);
- if(error){msg(error.message,true);return;}await openAuction(auctionId,auctionTitle);
-}
-$("addPlayerBtn").onclick=()=>openPlayerDialog();
-$("closePlayerDialog").onclick=()=>$("playerDialog").close();
-function openPlayerDialog(p=null){$("playerDialogTitle").textContent=p?"Edit player":"Add player";$("editPlayerId").value=p?.id||"";$("playerName").value=p?.name||"";$("playerCategory").value=p?.category||"A";$("playerPrice").value=p?.base_price??(settings?.category_a_base||6000000);$("playerPhoto").value="";$("playerFormMsg").textContent="";$("playerDialog").showModal();}
-function editPlayer(id){const p=players.find(x=>x.id===id);if(p)openPlayerDialog(p);}
-$("playerForm").addEventListener("submit",async e=>{
- e.preventDefault();const id=$("editPlayerId").value,name=$("playerName").value.trim(),category=$("playerCategory").value,base_price=Number($("playerPrice").value);
- const payload={auction_id:auctionId,name,category,base_price};
- let result;
- if(id)result=await db.from("players").update(payload).eq("id",id);
- else result=await db.from("players").insert(payload);
- if(result.error){$("playerFormMsg").textContent=result.error.message;return;}
- const newId=id||((await db.from("players").select("id").eq("auction_id",auctionId).eq("name",name).order("created_at",{ascending:false}).limit(1)).data||[])[0]?.id;
- const file=$("playerPhoto").files[0];
- if(file&&newId){const ext=file.name.split(".").pop().toLowerCase(),path=`${auctionId}/${newId}.${ext}`;const up=await db.storage.from("player-photos").upload(path,file,{upsert:true,contentType:file.type});if(up.error){$("playerFormMsg").textContent="Player saved, but photo upload failed: "+up.error.message;return;}const {data:signed}=await db.storage.from("player-photos").createSignedUrl(path,3600);if(signed?.signedUrl)await db.from("players").update({photo_url:path}).eq("id",newId);}
- $("playerDialog").close();await openAuction(auctionId,auctionTitle);
-});
-$("playerSearch").oninput=renderPlayers;$("statusFilter").onchange=renderPlayers;
-async function saveTeam(id){
- const name=document.querySelector(`[data-team-name="${id}"]`).value.trim(),budget=Number(document.querySelector(`[data-team-budget="${id}"]`).value);
- const {error}=await db.from("teams").update({name,initial_budget:budget,remaining_budget:budget}).eq("id",id);
- if(error){msg(error.message,true);return;}await openAuction(auctionId,auctionTitle);
-}
-$("leadingTeam").onchange=async()=>{if(!state)return;const {error}=await db.from("auction_state").update({leading_team_id:$("leadingTeam").value||null,updated_at:new Date().toISOString()}).eq("auction_id",auctionId);if(error)msg(error.message,true);else{state.leading_team_id=$("leadingTeam").value||null;msg("Leading team updated.");}};
-$("bidBtn").onclick=async()=>{
- if(!currentPlayer||paused)return;const increment=Number(settings?.bid_increment||500000),amount=Number(state?.current_bid||0)+increment,teamId=$("leadingTeam").value;
- if(!teamId){msg("Select the leading team before placing a bid.",true);return;}
- const {error:be}=await db.from("bids").insert({auction_id:auctionId,player_id:currentPlayer.id,team_id:teamId,bid_amount:amount});if(be){msg(be.message,true);return;}
- const {error}=await db.from("auction_state").update({current_bid:amount,leading_team_id:teamId,updated_at:new Date().toISOString()}).eq("auction_id",auctionId);if(error){msg(error.message,true);return;}await openAuction(auctionId,auctionTitle);
-};
-$("pauseBtn").onclick=async()=>{if(!state)return;const {error}=await db.from("auction_state").update({is_paused:!paused,updated_at:new Date().toISOString()}).eq("auction_id",auctionId);if(error){msg(error.message,true);return;}paused=!paused;render();};
-async function finishPlayer(status){
- if(!currentPlayer)return;const teamId=$("leadingTeam").value,price=Number(state?.current_bid||0);
- if(status==="sold"&&!teamId){msg("Choose a team before marking SOLD.",true);return;}
- if(status==="sold"){
-  const team=teams.find(t=>t.id===teamId);if(!team||Number(team.remaining_budget)<price){msg("Selected team does not have enough remaining budget.",true);return;}
-  const {error:se}=await db.from("sales").insert({auction_id:auctionId,player_id:currentPlayer.id,team_id:teamId,player_name:currentPlayer.name,category:currentPlayer.category,sold_price:price,photo_url:currentPlayer.photo_url});
-  if(se){msg(se.message,true);return;}
-  const {error:te}=await db.from("teams").update({remaining_budget:Number(team.remaining_budget)-price}).eq("id",teamId);if(te){msg(te.message,true);return;}
-  const {error:pe}=await db.from("players").update({status:"sold",team_id:teamId,sold_price:price}).eq("id",currentPlayer.id);if(pe){msg(pe.message,true);return;}
- }else{const {error}=await db.from("players").update({status:"unsold",team_id:null,sold_price:null}).eq("id",currentPlayer.id);if(error){msg(error.message,true);return;}}
- await db.from("auction_state").update({current_player_id:null,leading_team_id:null,current_bid:0,is_paused:false,updated_at:new Date().toISOString()}).eq("auction_id",auctionId);
- await openAuction(auctionId,auctionTitle);msg(status==="sold"?"Player marked SOLD.":"Player marked UNSOLD.");
-}
-$("soldBtn").onclick=()=>finishPlayer("sold");$("unsoldBtn").onclick=()=>finishPlayer("unsold");
-checkAdmin();
+// SPL Auction Manager — Supabase browser client. Never place a service-role key here.
+const SUPABASE_URL="https://vwsodzsimnrvigrxeusr.supabase.co";
+const SUPABASE_KEY="sb_publishable_nV6AWGiuN2asXdZFjSIYBg_4BNp7DdD";
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const $=id=>document.getElementById(id), money=n=>"৳"+Number(n||0).toLocaleString("en-BD");
+const AUCTIONS={football:"11111111-1111-4111-8111-111111111111",cricket:"22222222-2222-4222-8222-222222222222"};
+let aid="",auctionName="",teams=[],players=[],sales=[],state=null,settings=null,selected=null,paused=false;
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function view(id){["login","choose","app"].forEach(x=>$(x).classList.toggle("hide",x!==id));$("logout").classList.toggle("hide",id==="login");}
+function note(t,bad=false){$("notice").textContent=t;$("notice").style.color=bad?"#b33":"#247448";}
+async function authCheck(){let {data:{session}}=await db.auth.getSession();if(!session){view("login");return;}let {data,error}=await db.rpc("is_spl_admin");if(error||data!==true){await db.auth.signOut();$("loginError").textContent="This account is not authorized as an SPL admin.";view("login");return;}view("choose");}
+$("loginForm").onsubmit=async e=>{e.preventDefault();$("loginError").textContent="Signing in...";let {error}=await db.auth.signInWithPassword({email:$("email").value,password:$("password").value});if(error){$("loginError").textContent=error.message;return;}await authCheck();};
+$("logout").onclick=async()=>{await db.auth.signOut();view("login");};
+document.querySelectorAll(".sport").forEach(b=>b.onclick=()=>loadAuction(b.dataset.id,b.dataset.title));
+$("back").onclick=()=>view("choose");
+async function loadAuction(id,name){aid=id;auctionName=name;$("title").textContent=name;view("app");note("Loading...");let [t,p,s,g,h]=await Promise.all([db.from("teams").select("*").eq("auction_id",aid).order("created_at"),db.from("players").select("*").eq("auction_id",aid).order("created_at",{ascending:false}),db.from("auction_state").select("*").eq("auction_id",aid).maybeSingle(),db.from("auction_settings").select("*").eq("auction_id",aid).maybeSingle(),db.from("sales").select("*").eq("auction_id",aid).order("created_at",{ascending:false}).limit(30)]);let err=t.error||p.error||s.error||g.error||h.error;if(err){note(err.message,true);return;}teams=t.data||[];players=p.data||[];state=s.data;settings=g.data; sales=h.data||[];paused=!!state?.is_paused;render();note("Auction data loaded.");}
+function render(){ $("pauseState").textContent=paused?"PAUSED":"READY";$("teamSummary").innerHTML=teams.map(t=>`<div class="stat"><small>${esc(t.name)}</small><b>${money(t.remaining_budget)}</b><small>${players.filter(p=>p.team_id===t.id&&p.status==="sold").length} players sold</small></div>`).join("");$("leader").innerHTML='<option value="">Select team</option>'+teams.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join("");drawPlayers();drawTeams();drawSales();drawLot();}
+function drawPlayers(){let q=$("search").value.toLowerCase(),f=$("filter").value;let list=players.filter(p=>(p.name||"").toLowerCase().includes(q)&&(f==="all"||p.status===f));$("playerRows").innerHTML=list.map(p=>`<tr><td><b>${esc(p.name)}</b></td><td>${p.category}</td><td>${money(p.base_price)}</td><td><span class="tag">${p.status}</span></td><td><button class="btn ghost" data-edit="${p.id}">Edit</button> <button class="btn ghost" data-pick="${p.id}" ${p.status!=="available"?"disabled":""}>Select</button> <button class="btn ghost" data-del="${p.id}">Delete</button></td></tr>`).join("")||'<tr><td colspan="5">No players found.</td></tr>';document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>editPlayer(b.dataset.edit));document.querySelectorAll("[data-pick]").forEach(b=>b.onclick=()=>pickPlayer(b.dataset.pick));document.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>deletePlayer(b.dataset.del));}
+function drawTeams(){$("teamEditor").innerHTML=teams.map(t=>`<div class="teamitem"><label>Team name<input data-name="${t.id}" value="${esc(t.name)}"></label><label>Budget (BDT)<input data-budget="${t.id}" type="number" min="0" value="${Number(t.initial_budget)}"></label><button class="btn ghost" data-save-team="${t.id}">Save team</button></div>`).join("");document.querySelectorAll("[data-save-team]").forEach(b=>b.onclick=()=>saveTeam(b.dataset.saveTeam));}
+function drawLot(){selected=players.find(p=>p.id===state?.current_player_id)||null;$("lot").innerHTML=selected?`<div class="avatar">${esc(selected.name.slice(0,2).toUpperCase())}</div><h3>${esc(selected.name)}</h3><p class="muted">Category ${selected.category} · Base ${money(selected.base_price)}</p>`:'<div class="avatar">SPL</div><h3>No player selected</h3><p class="muted">Select an available player.</p>';$("bidValue").textContent=money(state?.current_bid||0);$("bid").disabled=$("sold").disabled=$("unsold").disabled=!selected||paused;if(state?.leading_team_id)$("leader").value=state.leading_team_id;}
+function drawSales(){$("salesRows").innerHTML=sales.map(s=>`<tr><td>${esc(s.player_name)}</td><td>${esc(teams.find(t=>t.id===s.team_id)?.name||"Team")}</td><td>${esc(s.category)}</td><td>${money(s.sold_price)}</td><td>${s.created_at?new Date(s.created_at).toLocaleDateString():"—"}</td><td><button class="btn ghost" data-card="${s.id}">Create card</button></td></tr>`).join("")||'<tr><td colspan="6">No sales yet.</td></tr>';document.querySelectorAll("[data-card]").forEach(b=>b.onclick=()=>makeCard(sales.find(s=>s.id===b.dataset.card)));}
+$("search").oninput=drawPlayers;$("filter").onchange=drawPlayers;
+$("newPlayer").onclick=()=>playerModal();$("closeModal").onclick=()=>$("playerModal").close();
+function playerModal(p=null){$("modalTitle").textContent=p?"Edit player":"Add player";$("playerId").value=p?.id||"";$("playerName").value=p?.name||"";$("category").value=p?.category||"A";$("basePrice").value=p?.base_price??(settings?.category_a_base||6000000);$("photo").value="";$("modalError").textContent="";$("playerModal").showModal();}
+function editPlayer(id){let p=players.find(x=>x.id===id);if(p)playerModal(p);}
+$("playerForm").onsubmit=async e=>{e.preventDefault();let id=$("playerId").value,name=$("playerName").value.trim(),payload={auction_id:aid,name,category:$("category").value,base_price:Number($("basePrice").value)};let res=id?await db.from("players").update(payload).eq("id",id):await db.from("players").insert(payload).select("id").single();if(res.error){$("modalError").textContent=res.error.message;return;}let pid=id||res.data.id,file=$("photo").files[0];if(file){let ext=file.name.split(".").pop().toLowerCase(),path=`${aid}/${pid}.${ext}`;let up=await db.storage.from("player-photos").upload(path,file,{upsert:true,contentType:file.type});if(up.error){$("modalError").textContent="Player saved; photo upload failed: "+up.error.message;return;}let upd=await db.from("players").update({photo_url:path}).eq("id",pid);if(upd.error){$("modalError").textContent="Photo uploaded but player update failed: "+upd.error.message;return;}}$("playerModal").close();await loadAuction(aid,auctionName);};
+async function deletePlayer(id){let p=players.find(x=>x.id===id);if(!p||!confirm(`Delete ${p.name}?`))return;let {error}=await db.from("players").delete().eq("id",id);if(error){note(error.message,true);return;}await loadAuction(aid,auctionName);}
+async function saveTeam(id){let name=document.querySelector(`[data-name="${id}"]`).value.trim(),budget=Number(document.querySelector(`[data-budget="${id}"]`).value);let {error}=await db.from("teams").update({name,initial_budget:budget,remaining_budget:budget}).eq("id",id);if(error){note(error.message,true);return;}await loadAuction(aid,auctionName);}
+async function pickPlayer(id){let {error}=await db.from("auction_state").update({current_player_id:id,leading_team_id:null,current_bid:0,is_paused:false,updated_at:new Date().toISOString()}).eq("auction_id",aid);if(error){note(error.message,true);return;}await loadAuction(aid,auctionName);}
+$("leader").onchange=async()=>{if(!state)return;let team=$("leader").value||null;let {error}=await db.from("auction_state").update({leading_team_id:team,updated_at:new Date().toISOString()}).eq("auction_id",aid);if(error)note(error.message,true);else state.leading_team_id=team;};
+$("bid").onclick=async()=>{if(!selected||paused)return;let team=$("leader").value;if(!team){note("Select the leading team first.",true);return;}let amount=Number(state?.current_bid||0)+Number(settings?.bid_increment||500000);let {error}=await db.from("bids").insert({auction_id:aid,player_id:selected.id,team_id:team,bid_amount:amount});if(error){note(error.message,true);return;}let u=await db.from("auction_state").update({current_bid:amount,leading_team_id:team,updated_at:new Date().toISOString()}).eq("auction_id",aid);if(u.error){note(u.error.message,true);return;}await loadAuction(aid,auctionName);};
+$("pause").onclick=async()=>{if(!state)return;let {error}=await db.from("auction_state").update({is_paused:!paused,updated_at:new Date().toISOString()}).eq("auction_id",aid);if(error){note(error.message,true);return;}paused=!paused;render();};
+async function finish(status){if(!selected)return;let teamId=$("leader").value,price=Number(state?.current_bid||0);if(status==="sold"){if(!teamId){note("Choose a team before SOLD.",true);return;}let team=teams.find(t=>t.id===teamId);if(!team||Number(team.remaining_budget)<price){note("Team budget is not enough.",true);return;}let sale={auction_id:aid,player_id:selected.id,team_id:teamId,player_name:selected.name,category:selected.category,sold_price:price,photo_url:selected.photo_url};let a=await db.from("sales").insert(sale);if(a.error){note(a.error.message,true);return;}let b=await db.from("teams").update({remaining_budget:Number(team.remaining_budget)-price}).eq("id",teamId);if(b.error){note(b.error.message,true);return;}let c=await db.from("players").update({status:"sold",team_id:teamId,sold_price:price}).eq("id",selected.id);if(c.error){note(c.error.message,true);return;}}else{let c=await db.from("players").update({status:"unsold",team_id:null,sold_price:null}).eq("id",selected.id);if(c.error){note(c.error.message,true);return;}}let reset=await db.from("auction_state").update({current_player_id:null,leading_team_id:null,current_bid:0,is_paused:false,updated_at:new Date().toISOString()}).eq("auction_id",aid);if(reset.error){note(reset.error.message,true);return;}await loadAuction(aid,auctionName);note(status==="sold"?"Player marked SOLD.":"Player marked UNSOLD.");}
+$("sold").onclick=()=>finish("sold");$("unsold").onclick=()=>finish("unsold");$("refresh").onclick=()=>loadAuction(aid,auctionName);
+function makeCard(s){if(!s)return;let c=document.createElement("canvas");c.width=1080;c.height=1350;let x=c.getContext("2d");x.fillStyle="#102b20";x.fillRect(0,0,1080,1350);x.fillStyle="#1a4932";x.fillRect(55,55,970,1240);x.strokeStyle="#d5b66a";x.lineWidth=5;x.strokeRect(75,75,930,1200);x.textAlign="center";x.fillStyle="#f4d98d";x.font="bold 54px Arial";x.fillText("SPL AUCTION",540,190);x.fillStyle="#fff";x.font="bold 76px Arial";x.fillText("SOLD",540,310);x.fillStyle="#dce9df";x.font="bold 64px Arial";x.fillText(s.player_name||"PLAYER",540,790);x.font="38px Arial";x.fillText("CATEGORY "+s.category,540,870);x.fillStyle="#f4d98d";x.font="bold 66px Arial";x.fillText(money(s.sold_price),540,1010);x.fillStyle="#fff";x.font="42px Arial";x.fillText(teams.find(t=>t.id===s.team_id)?.name||"TEAM",540,1110);x.font="30px Arial";x.fillText("SPL AUCTION MANAGER",540,1210);let a=document.createElement("a");a.download="SPL-SOLD-"+(s.player_name||"player").replace(/[^a-z0-9]/gi,"-")+".png";a.href=c.toDataURL("image/png");a.click();}
+authCheck();

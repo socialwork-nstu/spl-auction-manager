@@ -1,64 +1,36 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>SPL Auction Manager</title>
-  <link rel="stylesheet" href="styles.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SPL Auction Manager</title><link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-  <header class="topbar"><div class="brand">SPL <span>Auction Manager</span></div><button id="logoutBtn" class="secondary hidden">Log out</button></header>
-  <main class="wrap">
-    <section id="loginView" class="panel login-panel">
-      <h1>Admin Login</h1><p class="muted">Sign in with your SPL administrator account.</p>
-      <form id="loginForm">
-        <label>Email<input id="email" type="email" required autocomplete="username"></label>
-        <label>Password<input id="password" type="password" required autocomplete="current-password"></label>
-        <button class="primary" type="submit">Sign in</button>
-      </form><p id="loginMsg" class="message"></p>
-    </section>
-
-    <section id="auctionView" class="hidden">
-      <div class="heading"><div><p class="eyebrow">SELECT AUCTION</p><h1>Choose your auction</h1></div></div>
-      <div class="auction-choices">
-        <button class="auction-card" data-auction="11111111-1111-4111-8111-111111111111"><span>⚽</span><b>Football Auction</b><small>Manage football teams and players</small></button>
-        <button class="auction-card" data-auction="22222222-2222-4222-8222-222222222222"><span>🏏</span><b>Cricket Auction</b><small>Manage cricket teams and players</small></button>
-      </div>
-    </section>
-
-    <section id="dashboardView" class="hidden">
-      <div class="dash-head"><div><button id="backBtn" class="text-btn">← Auctions</button><p class="eyebrow">SPL AUCTION MANAGER</p><h1 id="auctionTitle">Football Auction</h1></div><div class="status-pill" id="sessionStatus">NOT STARTED</div></div>
-      <div id="notice" class="message"></div>
-      <div class="stats-grid" id="teamStats"></div>
-      <div class="columns">
-        <section class="panel">
-          <div class="panel-head"><h2>Players</h2><button id="addPlayerBtn" class="primary small">+ Add player</button></div>
-          <div class="filters"><input id="playerSearch" placeholder="Search player"><select id="statusFilter"><option value="all">All status</option><option value="available">Available</option><option value="sold">Sold</option><option value="unsold">Unsold</option></select></div>
-          <div class="table-wrap"><table><thead><tr><th>Player</th><th>Category</th><th>Base price</th><th>Status</th><th></th></tr></thead><tbody id="playersBody"></tbody></table></div>
-        </section>
-        <section class="panel live-panel">
-          <div class="panel-head"><h2>Live auction</h2><span class="live-dot">● LIVE CONTROL</span></div>
-          <div id="currentPlayer" class="current-player"><div class="avatar">SPL</div><h3>No player selected</h3><p class="muted">Choose an available player below.</p></div>
-          <div class="bid-box"><small>CURRENT BID</small><strong id="currentBid">৳0</strong><div class="bid-actions"><button id="bidBtn" class="primary" disabled>Place next bid</button><button id="pauseBtn" class="secondary">Pause</button></div></div>
-          <label>Leading team<select id="leadingTeam"><option value="">Select team</option></select></label>
-          <div class="result-actions"><button id="soldBtn" class="success" disabled>Mark SOLD</button><button id="unsoldBtn" class="danger" disabled>Mark UNSOLD</button></div>
-        </section>
-      </div>
-      <section class="panel team-panel"><div class="panel-head"><h2>Team management</h2><span class="muted">Edit team names and budgets</span></div><div id="teamsEditor" class="teams-editor"></div></section>
-    </section>
-  </main>
-
-  <dialog id="playerDialog">
-    <form id="playerForm" method="dialog">
-      <div class="panel-head"><h2 id="playerDialogTitle">Add player</h2><button type="button" id="closePlayerDialog" class="icon-btn">✕</button></div>
-      <input id="editPlayerId" type="hidden">
-      <label>Player name<input id="playerName" required maxlength="100"></label>
-      <div class="form-row"><label>Category<select id="playerCategory"><option value="A">Category A</option><option value="B">Category B</option><option value="C">Category C</option></select></label><label>Base price (BDT)<input id="playerPrice" type="number" min="0" step="500000" required></label></div>
-      <label>Player photo (JPG, PNG or WebP)<input id="playerPhoto" type="file" accept="image/jpeg,image/png,image/webp"></label>
-      <p id="playerFormMsg" class="message"></p><button class="primary" type="submit">Save player</button>
-    </form>
-  </dialog>
-  <script src="app.js"></script>
-</body>
-</html>
+<header class="top"><div class="logo">SPL <span>AUCTION MANAGER</span></div><button id="logout" class="btn ghost hide">Log out</button></header>
+<main class="container">
+<section id="login" class="panel login"><p class="eyebrow">ADMIN ACCESS</p><h1>Welcome back</h1><p class="muted">Sign in to manage SPL auctions.</p>
+<form id="loginForm"><label>Email<input id="email" type="email" required></label><label>Password<input id="password" type="password" required></label><button class="btn primary full">Sign in</button></form><p id="loginError" class="error"></p></section>
+<section id="choose" class="hide"><p class="eyebrow">SPL AUCTION MANAGER</p><h1>Select an auction</h1><div class="sport-grid">
+<button class="sport" data-id="11111111-1111-4111-8111-111111111111" data-title="Football Auction"><span>⚽</span><b>Football Auction</b><small>Manage football auction</small></button>
+<button class="sport" data-id="22222222-2222-4222-8222-222222222222" data-title="Cricket Auction"><span>🏏</span><b>Cricket Auction</b><small>Manage cricket auction</small></button></div></section>
+<section id="app" class="hide">
+<div class="pagehead"><div><button id="back" class="link">← All auctions</button><p class="eyebrow">CONTROL ROOM</p><h1 id="title">Football Auction</h1></div><span id="pauseState" class="pill">READY</span></div>
+<p id="notice" class="notice"></p>
+<div id="teamSummary" class="summary"></div>
+<div class="layout">
+<section class="panel"><div class="panelhead"><h2>Players</h2><button id="newPlayer" class="btn primary">+ Add player</button></div>
+<div class="filters"><input id="search" placeholder="Search players"><select id="filter"><option value="all">All players</option><option>available</option><option>sold</option><option>unsold</option></select></div>
+<div class="tablebox"><table><thead><tr><th>Player</th><th>Category</th><th>Base price</th><th>Status</th><th>Action</th></tr></thead><tbody id="playerRows"></tbody></table></div></section>
+<section class="panel"><div class="panelhead"><h2>Live bidding</h2><span class="live">● LIVE</span></div>
+<div id="lot" class="lot"><div class="avatar">SPL</div><h3>No player selected</h3><p class="muted">Select an available player from the list.</p></div>
+<div class="bidbox"><small>CURRENT BID</small><strong id="bidValue">৳0</strong><label>Leading team<select id="leader"><option value="">Select team</option></select></label>
+<div class="actions"><button id="bid" class="btn primary" disabled>Place next bid</button><button id="pause" class="btn ghost">Pause</button></div>
+<div class="actions"><button id="sold" class="btn green" disabled>Mark SOLD</button><button id="unsold" class="btn red" disabled>Mark UNSOLD</button></div></div></section></div>
+<section class="panel"><div class="panelhead"><h2>Team management</h2><small class="muted">Edit names and budgets</small></div><div id="teamEditor" class="teamgrid"></div></section>
+<section class="panel"><div class="panelhead"><h2>Recent sales</h2><button id="refresh" class="btn ghost">Refresh</button></div><div class="tablebox"><table><thead><tr><th>Player</th><th>Team</th><th>Category</th><th>Sold price</th><th>Date</th><th>Card</th></tr></thead><tbody id="salesRows"></tbody></table></div></section>
+</section></main>
+<dialog id="playerModal"><form id="playerForm"><div class="panelhead"><h2 id="modalTitle">Add player</h2><button type="button" id="closeModal" class="btn ghost">✕</button></div>
+<input id="playerId" type="hidden"><label>Player name<input id="playerName" required maxlength="100"></label>
+<div class="twocol"><label>Category<select id="category"><option>A</option><option>B</option><option>C</option></select></label><label>Base price (BDT)<input id="basePrice" type="number" min="0" step="500000" required></label></div>
+<label>Player photo<input id="photo" type="file" accept="image/png,image/jpeg,image/webp"></label><p id="modalError" class="error"></p><button class="btn primary full">Save player</button></form></dialog>
+<script src="app.js"></script></body></html>
