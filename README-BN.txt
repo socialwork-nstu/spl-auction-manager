@@ -1,18 +1,20 @@
-SPL Auction Manager - Starter Version 1
+SPL AUCTION MANAGER — FILE PACKAGE
 
-এই ZIP-এ ৪টি ফাইল আছে:
+এই ZIP-এ ৪টি ফাইল থাকার কথা:
 1. index.html
 2. styles.css
 3. app.js
 4. README-BN.txt
 
-GitHub-এ আপলোড:
-- ZIP ফাইলটি আগে ফোনে Extract করুন।
-- Extract করা SPL_Auction_Manager_v1 ফোল্ডারের ভেতরের ৩টি মূল ফাইল (index.html, styles.css, app.js) GitHub repository-র মূল জায়গায় Upload করুন।
-- README-BN.txt-ও চাইলে আপলোড করতে পারেন।
+ব্যবহার:
+- ZIP Extract করলে একই ফোল্ডারে চারটি ফাইল দেখতে পাবেন।
+- GitHub repository-তে আগের চারটি ফাইলের জায়গায় এই চারটি ফাইল আপলোড/Replace করতে হবে।
+- তারপর Cloudflare Pages-এ নতুন deployment দিতে হবে।
 
 গুরুত্বপূর্ণ:
-- এটি প্রাথমিক সংস্করণ: Admin sign-in এবং Football/Cricket নির্বাচন।
-- সম্পূর্ণ Auction Dashboard, player management, live bidding, photo cards ইত্যাদি এখনো যোগ করা হয়নি।
-- Supabase browser code-এ শুধু Publishable key ব্যবহার করা হয়েছে। Secret/service_role key কখনো browser code-এ দেবেন না।
-- এই সংস্করণে Cloudflare Pages-এর build command প্রয়োজন নেই; static site হিসেবে deploy করতে হবে।
+- Supabase project এবং আগের database tables/policies মুছবেন না।
+- app.js-এ Supabase URL ও Publishable Key সেট করা আছে।
+- Supabase-এ is_spl_admin() RPC, admin-only RLS policies এবং player-photos private bucket আগের মতো থাকতে হবে।
+- এই সংস্করণটি প্রাথমিক Admin dashboard: player add/edit, team budget/name edit, player select, bid, pause, SOLD/UNSOLD।
+- বাস্তব নিলামের আগে একাধিক admin/একই সময়ে bid, atomic budget deduction, undo, realtime projector display, signed photo display ও photo card generation আরও উন্নত/পরীক্ষা করা প্রয়োজন।
+- কোনো Service Role/secret key কখনো browser code-এ দেবেন না।
