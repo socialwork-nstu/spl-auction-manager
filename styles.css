@@ -1,0 +1,19 @@
+* { box-sizing: border-box; }
+:root { font-family: Arial, sans-serif; color: #17251e; background: #eef4f0; }
+body { margin: 0; min-height: 100vh; }
+.page { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
+.panel { width: 100%; max-width: 440px; background: white; padding: 32px; border-radius: 18px; box-shadow: 0 12px 40px #163b2818; }
+.brand { width: 58px; height: 58px; display: grid; place-items: center; border-radius: 16px; background: #147a4b; color: white; font-weight: 800; font-size: 21px; }
+h1 { margin: 18px 0 4px; font-size: 27px; }
+h2 { margin-top: 28px; }
+.muted { color: #718078; }
+label { display: block; margin: 18px 0 7px; font-weight: 600; font-size: 14px; }
+input { width: 100%; padding: 13px 14px; border: 1px solid #d5dfd9; border-radius: 9px; font-size: 16px; }
+button { width: 100%; border: 0; border-radius: 9px; padding: 14px; margin-top: 18px; background: #147a4b; color: white; font-weight: 700; font-size: 15px; cursor: pointer; }
+button:disabled { opacity: .6; }
+.choices { display: grid; gap: 10px; }
+.auction-choice { margin-top: 6px; }
+.secondary { background: #e8efeb; color: #244334; }
+#message { min-height: 22px; color: #b42318; font-size: 14px; }
+.hidden { display: none; }
+footer { color: #829087; font-size: 12px; padding-top: 18px; }

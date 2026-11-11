@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SPL Auction Manager</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <main class="page">
+    <section class="panel">
+      <div class="brand">SPL</div>
+      <h1>SPL Auction Manager</h1>
+      <p class="muted">Admin access</p>
+
+      <form id="login-form">
+        <label for="email">Email</label>
+        <input id="email" type="email" autocomplete="username" required>
+        <label for="password">Password</label>
+        <input id="password" type="password" autocomplete="current-password" required>
+        <button type="submit" id="login-button">Sign in</button>
+        <p id="message" role="status"></p>
+      </form>
+
+      <section id="auction-picker" class="hidden">
+        <h2>Select auction</h2>
+        <div class="choices">
+          <button type="button" class="auction-choice" data-auction="football">Football Auction</button>
+          <button type="button" class="auction-choice" data-auction="cricket">Cricket Auction</button>
+        </div>
+        <p id="selection-message" class="muted"></p>
+        <button type="button" id="logout-button" class="secondary">Log out</button>
+      </section>
+    </section>
+    <footer> SPL Auction Manager · Admin Panel </footer>
+  </main>
+</body>
+</html>
