@@ -1,36 +1,389 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SPL Auction Manager</title><link rel="stylesheet" href="styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPL Auction Manager</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#0b1424;color:#fff;font-family:Arial,sans-serif}
+header{background:#14243a;padding:18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap}
+.logo{font-size:23px;font-weight:bold;color:#20d49a}
+main{max-width:1150px;margin:auto;padding:16px}
+.card{background:#14243a;border:1px solid #263b57;border-radius:13px;padding:16px;margin-bottom:15px}
+h2,h3{margin-top:0}
+button{border:0;border-radius:8px;padding:11px 15px;background:#20d49a;color:#06251b;font-weight:bold;cursor:pointer;margin:3px}
+.secondary{background:#304763;color:white}
+.danger{background:#e94d5d;color:white}
+.gold{background:#f4bd4f;color:#241800}
+input,select{width:100%;padding:12px;margin:5px 0 12px;background:#091525;color:white;border:1px solid #354a66;border-radius:8px}
+label{color:#aabbd0;font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.stat{background:#203550;padding:15px;border-radius:10px}
+.stat strong{font-size:24px;display:block;margin-top:5px}
+.tabs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:15px}
+.tabs button{background:#304763;color:white}
+.tabs button.active{background:#20d49a;color:#06251b}
+table{width:100%;border-collapse:collapse;min-width:500px}
+th,td{text-align:left;padding:10px;border-bottom:1px solid #30435c}
+th{color:#9eb2c9}
+.scroll{overflow-x:auto}
+.hidden{display:none!important}
+.price{text-align:center;font-size:clamp(35px,7vw,65px);font-weight:bold;color:#f4bd4f}
+.player{text-align:center;padding:15px}
+.photo{width:110px;height:110px;border-radius:50%;object-fit:cover;background:#304763}
+.message{padding:12px;background:#194c3c;border-radius:8px;margin-bottom:12px}
+.error{background:#5a2931}
+</style>
 </head>
 <body>
-<header class="top"><div class="logo">SPL <span>AUCTION MANAGER</span></div><button id="logout" class="btn ghost hide">Log out</button></header>
-<main class="container">
-<section id="login" class="panel login"><p class="eyebrow">ADMIN ACCESS</p><h1>Welcome back</h1><p class="muted">Sign in to manage SPL auctions.</p>
-<form id="loginForm"><label>Email<input id="email" type="email" required></label><label>Password<input id="password" type="password" required></label><button class="btn primary full">Sign in</button></form><p id="loginError" class="error"></p></section>
-<section id="choose" class="hide"><p class="eyebrow">SPL AUCTION MANAGER</p><h1>Select an auction</h1><div class="sport-grid">
-<button class="sport" data-id="11111111-1111-4111-8111-111111111111" data-title="Football Auction"><span>⚽</span><b>Football Auction</b><small>Manage football auction</small></button>
-<button class="sport" data-id="22222222-2222-4222-8222-222222222222" data-title="Cricket Auction"><span>🏏</span><b>Cricket Auction</b><small>Manage cricket auction</small></button></div></section>
-<section id="app" class="hide">
-<div class="pagehead"><div><button id="back" class="link">← All auctions</button><p class="eyebrow">CONTROL ROOM</p><h1 id="title">Football Auction</h1></div><span id="pauseState" class="pill">READY</span></div>
-<p id="notice" class="notice"></p>
-<div id="teamSummary" class="summary"></div>
-<div class="layout">
-<section class="panel"><div class="panelhead"><h2>Players</h2><button id="newPlayer" class="btn primary">+ Add player</button></div>
-<div class="filters"><input id="search" placeholder="Search players"><select id="filter"><option value="all">All players</option><option>available</option><option>sold</option><option>unsold</option></select></div>
-<div class="tablebox"><table><thead><tr><th>Player</th><th>Category</th><th>Base price</th><th>Status</th><th>Action</th></tr></thead><tbody id="playerRows"></tbody></table></div></section>
-<section class="panel"><div class="panelhead"><h2>Live bidding</h2><span class="live">● LIVE</span></div>
-<div id="lot" class="lot"><div class="avatar">SPL</div><h3>No player selected</h3><p class="muted">Select an available player from the list.</p></div>
-<div class="bidbox"><small>CURRENT BID</small><strong id="bidValue">৳0</strong><label>Leading team<select id="leader"><option value="">Select team</option></select></label>
-<div class="actions"><button id="bid" class="btn primary" disabled>Place next bid</button><button id="pause" class="btn ghost">Pause</button></div>
-<div class="actions"><button id="sold" class="btn green" disabled>Mark SOLD</button><button id="unsold" class="btn red" disabled>Mark UNSOLD</button></div></div></section></div>
-<section class="panel"><div class="panelhead"><h2>Team management</h2><small class="muted">Edit names and budgets</small></div><div id="teamEditor" class="teamgrid"></div></section>
-<section class="panel"><div class="panelhead"><h2>Recent sales</h2><button id="refresh" class="btn ghost">Refresh</button></div><div class="tablebox"><table><thead><tr><th>Player</th><th>Team</th><th>Category</th><th>Sold price</th><th>Date</th><th>Card</th></tr></thead><tbody id="salesRows"></tbody></table></div></section>
-</section></main>
-<dialog id="playerModal"><form id="playerForm"><div class="panelhead"><h2 id="modalTitle">Add player</h2><button type="button" id="closeModal" class="btn ghost">✕</button></div>
-<input id="playerId" type="hidden"><label>Player name<input id="playerName" required maxlength="100"></label>
-<div class="twocol"><label>Category<select id="category"><option>A</option><option>B</option><option>C</option></select></label><label>Base price (BDT)<input id="basePrice" type="number" min="0" step="500000" required></label></div>
-<label>Player photo<input id="photo" type="file" accept="image/png,image/jpeg,image/webp"></label><p id="modalError" class="error"></p><button class="btn primary full">Save player</button></form></dialog>
-<script src="app.js"></script></body></html>
+
+<header>
+ <div class="logo">SPL AUCTION MANAGER</div>
+ <div id="userArea"></div>
+</header>
+
+<main>
+<section id="login">
+ <div class="card" style="max-width:420px;margin:50px auto">
+  <h2>Admin Login</h2>
+  <label>Email</label>
+  <input id="email" type="email" placeholder="Admin email">
+  <label>Password</label>
+  <input id="password" type="password" placeholder="Password">
+  <button style="width:100%" onclick="login()">Sign In</button>
+  <p id="loginMessage"></p>
+ </div>
+</section>
+
+<section id="dashboard" class="hidden">
+ <div id="notice"></div>
+
+ <div class="card">
+  <h2 id="auctionTitle">Football Auction</h2>
+  <button onclick="switchAuction('football')">Football</button>
+  <button onclick="switchAuction('cricket')" class="secondary">Cricket</button>
+  <button onclick="logout()" class="danger">Log Out</button>
+ </div>
+
+ <div class="grid" id="stats"></div>
+
+ <div class="tabs">
+  <button class="active" onclick="tab('live',this)">Live Auction</button>
+  <button onclick="tab('players',this)">Players</button>
+  <button onclick="tab('teams',this)">Teams</button>
+  <button onclick="tab('sales',this)">Sales History</button>
+  <button onclick="tab('settings',this)">Settings</button>
+ </div>
+
+ <section id="live">
+  <div class="grid">
+   <div class="card">
+    <h2>Current Player</h2>
+    <div id="currentPlayer" class="player">No player selected</div>
+    <div class="price" id="currentBid">৳0</div>
+    <label>Highest Bid</label>
+    <select id="bidTeam"></select>
+    <label>Bid Amount (৳)</label>
+    <input id="bidAmount" type="number">
+    <button onclick="placeBid()">PLACE BID</button>
+    <button onclick="finish('sold')">SOLD</button>
+    <button class="danger" onclick="finish('unsold')">UNSOLD</button>
+    <button class="gold" onclick="pauseAuction()">PAUSE / RESUME</button>
+   </div>
+   <div class="card">
+    <h2>Available Players</h2>
+    <div id="availablePlayers"></div>
+   </div>
+  </div>
+ </section>
+
+ <section id="players" class="hidden">
+  <div class="card">
+   <h2>Player Management</h2>
+   <label>Player Name</label>
+   <input id="playerName" placeholder="Player name">
+   <label>Category</label>
+   <select id="category">
+    <option>A</option><option>B</option><option>C</option>
+   </select>
+   <label>Base Price</label>
+   <input id="basePrice" type="number">
+   <button onclick="addPlayer()">ADD PLAYER</button>
+   <div id="playerList"></div>
+  </div>
+ </section>
+
+ <section id="teams" class="hidden">
+  <div class="card">
+   <h2>Teams & Budget</h2>
+   <div id="teamList"></div>
+  </div>
+ </section>
+
+ <section id="sales" class="hidden">
+  <div class="card">
+   <h2>Sales History</h2>
+   <div id="salesList"></div>
+  </div>
+ </section>
+
+ <section id="settings" class="hidden">
+  <div class="card">
+   <h2>Auction Settings</h2>
+   <label>Bid Increment</label>
+   <input id="increment" type="number">
+   <button onclick="saveSettings()">SAVE SETTINGS</button>
+  </div>
+ </section>
+</section>
+</main>
+
+<script>
+const SUPABASE_URL="https://vwsodzsimnrvigrxeusr.supabase.co";
+const SUPABASE_KEY="sb_publishable_nV6AWGiuN2asXdZFjSIYBg_4BNp7DdD";
+const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+const auctionIds={
+ football:"11111111-1111-4111-8111-111111111111",
+ cricket:"22222222-2222-4222-8222-222222222222"
+};
+
+let sport="football",auctionId=auctionIds.football;
+let teams=[],players=[],sales=[],state=null,settings=null,paused=false;
+
+const el=id=>document.getElementById(id);
+const money=n=>"৳"+Number(n||0).toLocaleString("en-BD");
+
+function notice(text,error=false){
+ el("notice").innerHTML='<div class="message '+(error?'error':'')+'">'+text+'</div>';
+}
+
+async function login(){
+ const email=el("email").value.trim();
+ const password=el("password").value;
+ el("loginMessage").textContent="Signing in...";
+ const {data,error}=await db.auth.signInWithPassword({email,password});
+ if(error){el("loginMessage").textContent=error.message;return}
+ const {data:admin,error:adminError}=await db.rpc("is_spl_admin");
+ if(adminError||!admin){
+  await db.auth.signOut();
+  el("loginMessage").textContent="Admin access denied.";
+  return;
+ }
+ enter(data.user);
+}
+
+async function enter(user){
+ el("login").classList.add("hidden");
+ el("dashboard").classList.remove("hidden");
+ el("userArea").textContent=user.email||"Admin";
+ await loadData();
+}
+
+async function logout(){
+ await db.auth.signOut();
+ location.reload();
+}
+
+async function checkLogin(){
+ const {data:{session}}=await db.auth.getSession();
+ if(session)enter(session.user);
+}
+
+async function loadData(){
+ const results=await Promise.all([
+  db.from("teams").select("*").eq("auction_id",auctionId),
+  db.from("players").select("*").eq("auction_id",auctionId).order("created_at",{ascending:false}),
+  db.from("sales").select("*").eq("auction_id",auctionId).order("created_at",{ascending:false}),
+  db.from("auction_state").select("*").eq("auction_id",auctionId).maybeSingle(),
+  db.from("auction_settings").select("*").eq("auction_id",auctionId).maybeSingle()
+ ]);
+
+ for(const r of results){
+  if(r.error){notice(r.error.message,true);return}
+ }
+
+ teams=results[0].data||[];
+ players=results[1].data||[];
+ sales=results[2].data||[];
+ state=results[3].data;
+ settings=results[4].data;
+ paused=!!state?.is_paused;
+ render();
+}
+
+function render(){
+ el("auctionTitle").textContent=sport==="football"?"Football Auction":"Cricket Auction";
+
+ const sold=players.filter(p=>p.status==="sold").length;
+ const unsold=players.filter(p=>p.status==="unsold").length;
+
+ el("stats").innerHTML=`
+ <div class="stat">Teams<strong>${teams.length}</strong></div>
+ <div class="stat">Players<strong>${players.length}</strong></div>
+ <div class="stat">Sold<strong>${sold}</strong></div>
+ <div class="stat">Unsold<strong>${unsold}</strong></div>`;
+
+ el("bidTeam").innerHTML='<option value="">Select team</option>'+
+ teams.map(t=>`<option value="${t.id}">${t.name} — ${money(t.remaining_budget)}</option>`).join("");
+
+ el("currentBid").textContent=money(state?.current_bid);
+ const current=players.find(p=>p.id===state?.current_player_id);
+
+ el("currentPlayer").textContent=current?current.name+" | Category "+current.category:"No player selected";
+
+ const available=players.filter(p=>p.status==="available");
+ el("availablePlayers").innerHTML=available.map(p=>`
+ <div style="padding:10px;border-bottom:1px solid #304763">
+ <b>${p.name}</b> — ${p.category} — ${money(p.base_price)}
+ <button onclick="selectPlayer('${p.id}')">SELECT</button>
+ </div>`).join("")||"No available players";
+
+ el("playerList").innerHTML=players.map(p=>`
+ <div style="padding:9px;border-bottom:1px solid #304763">
+ ${p.name} | ${p.category} | ${money(p.base_price)} | ${p.status}
+ </div>`).join("");
+
+ el("teamList").innerHTML=teams.map(t=>`
+ <div class="stat" style="margin:8px 0">
+ <b>${t.name}</b><br>
+ Remaining: ${money(t.remaining_budget)}
+ </div>`).join("");
+
+ el("salesList").innerHTML=sales.map(s=>`
+ <div style="padding:9px;border-bottom:1px solid #304763">
+ ${s.player_name} — ${money(s.sold_price)}
+ </div>`).join("")||"No sales yet";
+
+ el("increment").value=settings?.bid_increment||500000;
+}
+
+function tab(name,button){
+ ["live","players","teams","sales","settings"].forEach(x=>el(x).classList.toggle("hidden",x!==name));
+ document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"));
+ button.classList.add("active");
+}
+
+async function switchAuction(name){
+ sport=name;
+ auctionId=auctionIds[name];
+ await loadData();
+}
+
+async function selectPlayer(id){
+ const {error}=await db.from("auction_state").update({
+  current_player_id:id,leading_team_id:null,current_bid:0,is_paused:false
+ }).eq("auction_id",auctionId);
+ if(error){notice(error.message,true);return}
+ notice("Player selected.");
+ await loadData();
+}
+
+async function addPlayer(){
+ const name=el("playerName").value.trim();
+ const category=el("category").value;
+ const price=Number(el("basePrice").value);
+ if(!name||price<=0){notice("Enter player name and base price.",true);return}
+ const {error}=await db.from("players").insert({
+  name,category,base_price:price,status:"available",auction_id:auctionId
+ });
+ if(error){notice(error.message,true);return}
+ el("playerName").value="";
+ el("basePrice").value="";
+ notice("Player added.");
+ await loadData();
+}
+
+async function placeBid(){
+ if(paused)return notice("Auction is paused.",true);
+ const player=players.find(p=>p.id===state?.current_player_id);
+ const team=teams.find(t=>t.id===el("bidTeam").value);
+ const amount=Number(el("bidAmount").value);
+ if(!player||!team||!amount)return notice("Select player, team and bid amount.",true);
+ const min=Number(state.current_bid||player.base_price)+Number(settings?.bid_increment||500000);
+ if(amount<min)return notice("Minimum bid: "+money(min),true);
+ if(amount>Number(team.remaining_budget))return notice("Insufficient team budget.",true);
+
+ const {error}=await db.from("bids").insert({
+  player_id:player.id,team_id:team.id,bid_amount:amount,auction_id:auctionId
+ });
+ if(error)return notice(error.message,true);
+
+ const {error:e}=await db.from("auction_state").update({
+  leading_team_id:team.id,current_bid:amount,updated_at:new Date().toISOString()
+ }).eq("auction_id",auctionId);
+ if(e)return notice(e.message,true);
+ notice("Bid placed.");
+ await loadData();
+}
+
+async function finish(status){
+ const player=players.find(p=>p.id===state?.current_player_id);
+ if(!player)return notice("Select a player first.",true);
+
+ if(status==="sold"){
+  const team=teams.find(t=>t.id===state.leading_team_id);
+  const price=Number(state.current_bid);
+  if(!team||price<=0)return notice("Place a bid before SOLD.",true);
+  if(price>Number(team.remaining_budget))return notice("Insufficient budget.",true);
+
+  const {error:e1}=await db.from("teams").update({
+   remaining_budget:Number(team.remaining_budget)-price
+  }).eq("id",team.id);
+  if(e1)return notice(e1.message,true);
+
+  const {error:e2}=await db.from("players").update({
+   status:"sold",team_id:team.id,sold_price:price
+  }).eq("id",player.id);
+  if(e2)return notice(e2.message,true);
+
+  const {error:e3}=await db.from("sales").insert({
+   player_id:player.id,team_id:team.id,player_name:player.name,
+   category:player.category,sold_price:price,photo_url:player.photo_url,
+   auction_id:auctionId
+  });
+  if(e3)return notice("Sales record error: "+e3.message,true);
+  notice(player.name+" SOLD to "+team.name);
+ }else{
+  const {error}=await db.from("players").update({
+   status:"unsold",team_id:null,sold_price:null
+  }).eq("id",player.id);
+  if(error)return notice(error.message,true);
+  notice(player.name+" marked UNSOLD");
+ }
+
+ const {error}=await db.from("auction_state").update({
+  current_player_id:null,leading_team_id:null,current_bid:0,is_paused:false
+ }).eq("auction_id",auctionId);
+ if(error)notice(error.message,true);
+ await loadData();
+}
+
+async function pauseAuction(){
+ const {error}=await db.from("auction_state").update({
+  is_paused:!paused
+ }).eq("auction_id",auctionId);
+ if(error)return notice(error.message,true);
+ await loadData();
+ notice(paused?"Auction resumed.":"Auction paused.");
+}
+
+async function saveSettings(){
+ const {error}=await db.from("auction_settings").update({
+  bid_increment:Number(el("increment").value)
+ }).eq("auction_id",auctionId);
+ if(error)return notice(error.message,true);
+ notice("Settings saved.");
+ await loadData();
+}
+
+(async()=>{
+ const {data:{session}}=await db.auth.getSession();
+ if(session)enter(session.user);
+})();
+</script>
+</body>
+</html>
