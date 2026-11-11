@@ -1,1109 +1,865 @@
-
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>SPL Cricket Auction Manager</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SPL Auction Manager</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
+
 <style>
-:root{--bg:#08111f;--panel:#111e30;--panel2:#17263b;--line:#263a54;--txt:#edf4ff;--muted:#9fb0c7;--green:#18b77a;--red:#e34e5d;--gold:#f2b84b;--blue:#4389ed}
+:root{--bg:#f3f5f9;--ink:#172033;--muted:#7b8497;--line:#e7eaf0;--navy:#101b31;--blue:#3567e8;--green:#159765;--red:#d84d55;--gold:#f4bd45}
 *{box-sizing:border-box}
-body{margin:0;background:linear-gradient(145deg,#07101d,#0b1930);color:var(--txt);font:15px system-ui,-apple-system,Segoe UI,sans-serif}
-button,input,select{font:inherit}
-button{border:0;border-radius:10px;padding:11px 15px;background:var(--green);color:#04170f;font-weight:800;cursor:pointer}
-button:disabled{opacity:.45;cursor:not-allowed}
-.secondary{background:#263a54;color:#edf4ff}
-.danger{background:var(--red);color:white}
-.gold{background:var(--gold);color:#211500}
-.outline{background:transparent;border:1px solid var(--line);color:var(--txt)}
-input,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:#091525;color:var(--txt);outline:none}
-label{display:block;color:var(--muted);font-size:13px;margin:9px 0 5px}
+html,body,button,input,select{font-family:"DM Sans","Noto Sans Bengali",system-ui,Arial,sans-serif}
+body{margin:0;background:var(--bg);color:var(--ink)}
+button{cursor:pointer}
 .hidden{display:none!important}
-.wrap{max-width:1250px;margin:auto;padding:16px}
-.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 0 18px}
-.brand{font-size:22px;font-weight:900;letter-spacing:.4px}
-.brand span{color:var(--green)}
-.muted{color:var(--muted)}
-.small{font-size:12px}
-.card{background:linear-gradient(160deg,var(--panel),#0e1a2b);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 12px 35px #0003}
-.login{max-width:420px;margin:10vh auto}
-.tabs{display:flex;gap:8px;overflow:auto;padding:8px 0 15px}
-.tab{white-space:nowrap;background:#1b2b42;color:var(--muted)}
-.tab.active{background:var(--green);color:#03180f}
-.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
-.span12{grid-column:span 12}
-.span8{grid-column:span 8}
-.span7{grid-column:span 7}
-.span6{grid-column:span 6}
-.span5{grid-column:span 5}
-.span4{grid-column:span 4}
-.span3{grid-column:span 3}
-.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.between{justify-content:space-between}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-.stat{background:#0a1728;border:1px solid var(--line);border-radius:12px;padding:12px}
-.stat b{display:block;font-size:20px;margin-top:4px}
-.section-title{font-size:18px;font-weight:850;margin:0 0 12px}
-.player-focus{display:grid;grid-template-columns:170px 1fr;gap:18px;align-items:center}
-.photo{width:100%;aspect-ratio:1;object-fit:cover;border-radius:14px;background:#263a54}
-.placeholder{display:grid;place-items:center;font-size:42px;color:#8ca2bf}
-.price{font-size:34px;font-weight:950;color:var(--gold)}
-.team-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
-.team{border:1px solid var(--line);border-radius:12px;padding:11px;background:#0a1728}
-.team.selected{outline:2px solid var(--green)}
-.team button{width:100%;margin-top:8px}
-.list{display:grid;gap:8px}
-.item{display:flex;align-items:center;gap:10px;background:#0a1728;padding:10px;border:1px solid var(--line);border-radius:11px}
-.item img{width:48px;height:48px;object-fit:cover;border-radius:9px}
-.item .grow{flex:1;min-width:0}
-.item strong{display:block;overflow-wrap:anywhere}
-.pill{font-size:11px;padding:4px 8px;border-radius:30px;background:#263a54;color:#d8e6f8}
-.pill.sold{background:#124e3b;color:#9df1cb}
-.pill.unsold{background:#54252d;color:#ffc1c7}
-.notice{padding:11px;border-radius:10px;background:#172b43;color:#c6d9f4;margin:10px 0;overflow-wrap:anywhere}
-.notice.error{background:#49232b;color:#ffd0d5}
-.notice.good{background:#104331;color:#baf4d9}
-.table{width:100%;border-collapse:collapse}
-.table th,.table td{text-align:left;padding:9px;border-bottom:1px solid var(--line);font-size:13px}
-.table-wrap{overflow:auto}
-.admin-actions{display:flex;gap:8px;flex-wrap:wrap}
-.projector{min-height:100vh;padding:3vw;background:radial-gradient(circle at top,#17365a,#07101d 70%)}
-.projector .brand{font-size:clamp(25px,4vw,48px)}
-.projector .price{font-size:clamp(38px,7vw,90px)}
-.projector .focus{max-width:1200px;margin:4vh auto}
-.projector .photo{max-width:320px}
-.projector .player-focus{grid-template-columns:minmax(180px,30%) 1fr}
-.projector .stat b{font-size:clamp(18px,3vw,32px)}
-.projector .team-grid{grid-template-columns:repeat(4,1fr)}
-.projector .team{font-size:clamp(13px,2vw,22px)}
-.projector .muted{font-size:clamp(12px,1.5vw,18px)}
-.footer{padding:22px 0;color:#7186a2;text-align:center;font-size:12px}
-@media(max-width:760px){
-.span8,.span7,.span6,.span5,.span4,.span3{grid-column:span 12}
-.stats{grid-template-columns:repeat(2,1fr)}
-.player-focus{grid-template-columns:110px 1fr}
-.price{font-size:27px}
-.wrap{padding:12px}
-.projector .player-focus{grid-template-columns:35% 1fr}
-.projector .team-grid{grid-template-columns:repeat(2,1fr)}
-}
+.topbar{height:76px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 25px;position:sticky;top:0;z-index:5}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-mark{width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,#087d55,#3268e9);display:grid;place-items:center;color:#fff;font:700 17px "Space Grotesk"}
+.brand b{display:block;font:700 14px "Space Grotesk"}
+.brand small{display:block;color:var(--muted);font-size:10px;letter-spacing:1.5px;margin-top:3px}
+.top-actions{display:flex;gap:9px;align-items:center}
+.status-pill,.tag{font-size:10px;font-weight:800;letter-spacing:1px;padding:8px 11px;border-radius:30px;background:#edf2ff;color:#4165bd}
+.layout{display:grid;grid-template-columns:230px 1fr;min-height:calc(100vh - 76px)}
+.sidebar{background:#fff;border-right:1px solid var(--line);padding:24px 15px;display:flex;flex-direction:column;gap:8px}
+.side-label,.eyebrow{font-size:10px;font-weight:800;letter-spacing:1.7px;color:#8992a4;margin:0 0 8px}
+.nav{border:0;background:transparent;text-align:left;padding:13px;border-radius:10px;color:#626d80;font-weight:700}
+.nav.active,.nav:hover{background:#edf2ff;color:#315ed0}
+.sidebar-note{margin-top:25px;padding:15px;background:#edf7f2;border:1px solid #d8eee3;border-radius:12px;font-size:12px;color:#536c61;line-height:1.6}
+.sidebar-note b{color:#146b4b}
+.sidebar-note p{margin-bottom:0}
+.reset-link{margin-top:auto;border:0;background:none;color:#a34d54;text-align:left;padding:12px;font-weight:700}
+.content{padding:28px;max-width:1600px;width:100%;margin:auto}
+.view{display:none}.view.active{display:block}
+.page-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;gap:12px}
+.page-heading h1{font:700 28px "Space Grotesk";margin:0}
+.muted{color:var(--muted)}.page-heading .muted{margin:6px 0 0;font-size:13px}
+.auction-state{background:#fff4dd;color:#98670a;padding:9px 14px;border-radius:30px;font-size:10px;font-weight:800}
+.team-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.team-card,.panel,.team-edit{background:#fff;border:1px solid var(--line);border-radius:15px;padding:18px;box-shadow:0 4px 18px #18294a06}
+.team-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.team-dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:7px}
+.team-name{font-weight:800;font-size:13px}
+.team-budget{font:700 24px "Space Grotesk";margin:13px 0 2px}
+.team-sub{font-size:11px;color:var(--muted)}
+.progress{height:5px;background:#edf0f5;border-radius:9px;margin-top:12px;overflow:hidden}
+.progress span{display:block;height:100%;border-radius:9px}
+.auction-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:16px}
+.panel{margin-bottom:16px}
+.panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:8px}
+.panel h2{font:700 18px "Space Grotesk";margin:0}
+.player-feature{display:flex;gap:20px;align-items:center}
+.player-photo{width:150px;height:170px;flex-shrink:0;border-radius:13px;background:linear-gradient(145deg,#dfe7f7,#f4f6fb);display:grid;place-items:center;color:#9aa6bd;text-align:center;font:700 13px "Space Grotesk";overflow:hidden;background-size:cover;background-position:center}
+.player-info{flex:1;min-width:0}.player-info h2{font-size:23px;overflow-wrap:anywhere}
+.player-info p{font-size:12px;margin:7px 0 15px}
+.price-row{display:flex;gap:30px;flex-wrap:wrap}
+.price-row small{display:block;color:#929bad;font-size:9px;letter-spacing:1px;font-weight:800}
+.price-row b{display:block;font:700 21px "Space Grotesk";margin-top:5px}
+.price-row .live-price{color:var(--green);font-size:26px}
+.leading{display:inline-block;margin-top:12px;background:#e8f7f0;color:#138557;padding:8px 11px;border-radius:7px;font-size:11px;font-weight:800}
+.panel-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:20px;padding-top:16px;border-top:1px solid var(--line)}
+.btn{border:0;border-radius:9px;padding:11px 15px;font-weight:700;font-size:12px}
+.btn-primary{background:var(--blue);color:white}.btn-ghost{background:#f1f3f7;color:#566176}
+.btn-danger{background:var(--red);color:#fff}.btn-success{background:var(--green);color:#fff}
+.btn-danger-outline{background:#fff1f1;color:#c24850}.btn-small{padding:8px 11px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.bid-buttons{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bid-team{min-height:112px;padding:17px 12px;border:2px solid var(--bid-color);border-radius:12px;background:var(--bid-color);color:#fff;text-align:left;box-shadow:0 5px 16px #18294a18}
+.bid-team b{display:block;font:700 17px "Space Grotesk";color:#fff}
+.bid-team span{display:block;font-size:10px;color:#fff;margin-top:6px}
+.bid-team:hover:not(:disabled){filter:brightness(1.08);transform:translateY(-2px)}
+.bid-hint{font-size:11px;color:var(--muted);line-height:1.5;margin:15px 0}
+.result-actions{display:flex;gap:9px;flex-wrap:wrap}.result-actions button{flex:1}
+.queue-list{display:flex;gap:9px;flex-wrap:wrap}
+.queue-item{min-width:180px;display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:11px;background:linear-gradient(145deg,#f8fbff,#eef3f9);border:1px solid #e4eaf2;border-radius:9px;font-size:11px}
+.queue-item b{font-size:12px}.queue-item small{color:var(--muted)}
+.queue-highlight{outline:3px solid var(--blue);outline-offset:5px;border-radius:10px}
+.queue-filters{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 15px}
+.queue-filter{border:1px solid #dfe5ef;background:#f7f8fb;color:#596579;border-radius:9px;padding:9px 13px;font-weight:700;font-size:11px}
+.queue-filter.active{background:#263b5c;color:#fff}
+.category-badge{display:inline-block;padding:5px 8px;border-radius:6px;font-size:9px;font-weight:900}
+.category-badge-a{background:#fff1c9;color:#8b650c}.category-badge-b{background:#e4edff;color:#2858a8}.category-badge-c{background:#ddf5e9;color:#16734d}
+.player-form{display:grid;grid-template-columns:1.3fr .7fr 1.2fr auto;gap:12px;align-items:end;margin-top:18px}
+label{font-size:11px;font-weight:700;color:#657086}
+input,select{display:block;width:100%;margin-top:7px;border:1px solid #dfe4ed;border-radius:8px;padding:11px;font-size:12px;background:#fff;color:var(--ink)}
+input[type=file]{padding:8px}
+.table-wrap{overflow-x:auto}.table{width:100%;border-collapse:collapse;font-size:12px;min-width:600px}
+.table th{text-align:left;color:#8992a4;font-size:10px;letter-spacing:1px;padding:12px;border-bottom:1px solid var(--line)}
+.table td{padding:12px;border-bottom:1px solid #f0f2f6}
+.mini-photo{width:36px;height:36px;border-radius:8px;object-fit:cover;background:#edf0f6;vertical-align:middle;margin-right:9px}
+.team-edit-grid,.team-rosters{display:grid;grid-template-columns:repeat(2,1fr);gap:15px}
+.team-edit h2{font:700 18px "Space Grotesk"}
+.team-edit .btn{margin-top:12px}
+.roster-panel{margin-top:18px}
+.roster-team{background:#fbfcfe;border:1px solid var(--line);border-top:4px solid var(--roster-color);border-radius:13px;padding:15px}
+.roster-head{display:flex;justify-content:space-between;gap:8px;margin-bottom:12px}
+.roster-list{display:flex;flex-direction:column;gap:9px}
+.roster-player{display:flex;align-items:center;gap:10px;padding:9px;background:#fff;border:1px solid #edf0f5;border-radius:10px}
+.roster-player img,.roster-placeholder{width:43px;height:43px;flex:0 0 43px;border-radius:50%;object-fit:cover;background:#eef2f6}
+.roster-placeholder{display:grid;place-items:center;font-size:10px;font-weight:900}
+.roster-player-info{flex:1;min-width:0}.roster-player-info b{display:block;font-size:12px}.roster-player-info small{font-size:10px;color:#748096}
+.modal{position:fixed;inset:0;background:#0c1629b8;display:grid;place-items:center;z-index:20;padding:20px}
+.modal.hidden{display:none}.modal-card{background:#fff;border-radius:18px;padding:25px;width:min(520px,100%);position:relative}
+.modal-card h2{font:700 24px "Space Grotesk";margin:0 0 18px}
+.modal-close{position:absolute;right:17px;top:13px;border:0;background:none;font-size:26px}
+.sold-card-preview{display:flex;justify-content:center;background:#f2f4f8;border-radius:12px;padding:12px}
+.sold-card-preview canvas{width:min(100%,270px);height:auto;aspect-ratio:4/5;object-fit:contain}
+.modal-actions{display:flex;gap:10px;margin-top:16px}.modal-actions button{flex:1}
+.login-screen{min-height:100vh;display:grid;place-items:center;padding:20px;background:linear-gradient(135deg,#10243d,#087d55)}
+.login-card{background:#fff;width:min(420px,100%);padding:30px;border-radius:18px;box-shadow:0 20px 60px #0003}
+.login-card h1{font:700 25px "Space Grotesk";margin:0 0 5px}
+.login-card label{display:block;margin-top:17px}
+.sport-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:25px}
+.sport-card{border:2px solid var(--line);background:#fff;border-radius:15px;padding:25px;text-align:center;font:700 20px "Space Grotesk"}
+.sport-card:hover{border-color:var(--green);background:#f1fbf6}
+.display-page{min-height:100vh;background:radial-gradient(ellipse at 50% 0%,#1d3b62 0%,#101d34 48%,#091321 100%);color:#fff;padding:24px 3vw}
+.display-header{display:flex;align-items:center;gap:16px;border-bottom:1px solid #ffffff24;padding-bottom:18px}
+.display-header h1{font:700 clamp(20px,2.4vw,36px) "Space Grotesk";margin:0}
+.display-header p{font-size:11px;letter-spacing:3px;color:#a9c5d8;margin:6px 0 0}
+.live-indicator{margin-left:auto;background:#0b704c;color:#a9ffd8;border-radius:30px;padding:9px 15px;font-weight:800;font-size:12px}
+.display-standings{max-width:1450px;margin:22px auto;padding:18px 22px;background:linear-gradient(135deg,#142b49,#10233d);border:1px solid #ffffff24;border-radius:17px}
+.standings-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.display-kicker{font-size:10px;font-weight:900;letter-spacing:2px;color:#61e3ac}
+.standings-heading h2{font:700 22px "Space Grotesk";margin:5px 0;color:#fff}
+.standings-wrap{overflow-x:auto}
+.standings-table{width:100%;border-collapse:separate;border-spacing:0 6px;min-width:600px}
+.standings-table th{padding:10px 15px;color:#9eb4cf;font-size:10px;letter-spacing:1px;text-align:left}
+.standings-table td{padding:13px 15px;background:#ffffff0b;color:#eaf2ff;font-size:14px;font-weight:700}
+.standings-team{display:flex;align-items:center;gap:10px}
+.standings-dot{width:12px;height:34px;border-radius:5px;background:var(--team)}
+.player-count-pill{display:inline-grid;place-items:center;min-width:36px;height:30px;padding:0 10px;border-radius:9px;background:#ffffff16}
+.remaining-money{color:#69e6ad;font:700 18px "Space Grotesk"}
+.display-main{display:grid;grid-template-columns:minmax(220px,31%) 1fr;gap:4vw;align-items:center;max-width:1350px;margin:2vh auto}
+.display-player-photo{height:min(40vh,390px);background:#ffffff12;border:2px solid #ffffff25;border-radius:18px;display:grid;place-items:center;background-size:cover;background-position:center;color:#8fa1bd;font:700 22px "Space Grotesk";text-align:center;overflow:hidden}
+.display-tag{display:inline-block;background:linear-gradient(135deg,#f5d36b,#e5a92e);color:#1c2639;padding:8px 13px;border-radius:5px;font-size:11px;font-weight:900}
+.display-player-details h2{font:700 clamp(32px,4.5vw,66px) "Space Grotesk";margin:16px 0 7px}
+.display-player-details p{color:#aebbd0}
+.display-price{margin-top:25px}.display-price small{display:block;color:#aebbd0;letter-spacing:2px;font-size:11px}
+.display-price strong{display:block;color:#ffd56a;font:700 clamp(45px,6vw,84px) "Space Grotesk"}
+.display-leading{display:inline-block;background:#08764e;padding:12px 17px;border-radius:8px;font-weight:800;margin-top:12px}
+.display-footer{display:flex;justify-content:space-between;gap:12px;border-top:1px solid #ffffff24;padding-top:18px;color:#b5c4d8;font-size:12px}
+.display-exit{position:fixed;right:15px;bottom:12px;opacity:.25;border:0;padding:8px;border-radius:6px}
+@media(max-width:1050px){.layout{grid-template-columns:190px 1fr}.auction-grid{grid-template-columns:1fr}.player-form{grid-template-columns:1fr 1fr}.team-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:760px){.layout{grid-template-columns:1fr}.sidebar{position:static;display:grid;grid-template-columns:1fr 1fr;padding:12px}.sidebar-note,.reset-link{display:none}.content{padding:14px}.topbar{padding:0 12px}.team-grid{grid-template-columns:1fr 1fr}.player-feature{align-items:flex-start;flex-direction:column}.player-photo{width:100%;height:220px}.team-edit-grid,.team-rosters{grid-template-columns:1fr}.player-form{grid-template-columns:1fr}.display-main{grid-template-columns:1fr;gap:18px}.display-player-photo{height:240px;max-width:420px;width:100%;margin:auto}.display-footer{flex-wrap:wrap}.page-heading h1{font-size:22px}}
 </style>
 </head>
+
 <body>
 
-<div id="app" class="wrap">
-<div class="login card" id="loginBox">
-<div class="brand">SPL <span>CRICKET AUCTION</span></div>
-<p class="muted">Admin sign in</p>
-<div id="loginMsg"></div>
-<label>Email</label>
-<input id="email" type="email" autocomplete="username" placeholder="Admin email">
-<label>Password</label>
-<input id="password" type="password" autocomplete="current-password" placeholder="Password">
-<button style="width:100%;margin-top:15px" id="loginBtn">Sign in</button>
-<p class="small muted">Only authorized SPL administrators can access this panel.</p>
-</div>
+<!-- LOGIN -->
+<section id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <div class="brand-mark">SPL</div>
+    <h1>SPL AUCTION MANAGER</h1>
+    <p class="muted">Admin Login</p>
+    <label>Email<input id="loginEmail" type="email" placeholder="Admin email"></label>
+    <label>Password<input id="loginPassword" type="password" placeholder="Password"></label>
+    <button id="loginBtn" class="btn btn-primary" style="width:100%;margin-top:20px">Log In</button>
+    <p id="loginMessage" class="muted"></p>
+  </div>
+</section>
 
-<div id="main" class="hidden">
-<header class="top">
-<div>
-<div class="brand">SPL <span>CRICKET AUCTION MANAGER</span></div>
-<div class="muted small" id="subTitle">Live cricket auction control center</div>
-</div>
-<div class="row">
-<button class="secondary" id="projectorBtn">Open Projector</button>
-<button class="outline" id="logoutBtn">Log out</button>
-</div>
+<!-- SPORT SELECT -->
+<section id="sportScreen" class="login-screen hidden">
+  <div class="login-card">
+    <div class="brand-mark">SPL</div>
+    <h1>SELECT AUCTION</h1>
+    <p class="muted">Choose the auction you want to manage.</p>
+    <div class="sport-grid">
+      <button class="sport-card" data-sport="cricket">🏏<br>CRICKET</button>
+      <button class="sport-card" data-sport="football">⚽<br>FOOTBALL</button>
+    </div>
+    <button id="logoutFromSport" class="btn btn-ghost" style="width:100%;margin-top:20px">Log Out</button>
+  </div>
+</section>
+
+<!-- ADMIN APP -->
+<div id="adminApp" class="hidden">
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark">SPL</div>
+    <div><b>SOCIOLOGY PREMIER LEAGUE</b><small>PLAYER AUCTION MANAGER</small></div>
+  </div>
+  <div class="top-actions">
+    <span id="sportLabel" class="status-pill">CRICKET AUCTION</span>
+    <button id="switchSport" class="btn btn-ghost">Change Sport</button>
+    <button id="openDisplay" class="btn btn-primary">Open Live Display</button>
+    <button id="logoutBtn" class="btn btn-ghost">Log Out</button>
+  </div>
 </header>
 
-<div class="row between">
-<div class="row"><span class="pill">🏏 CRICKET AUCTION</span></div>
-<span class="pill" id="auctionStatus">READY</span>
-</div>
+<div class="layout">
+<aside class="sidebar">
+  <p class="side-label">AUCTION MENU</p>
+  <button class="nav active" data-view="auction">◉ Live Auction</button>
+  <button class="nav" data-view="players">♙ Player Management</button>
+  <button class="nav" data-view="teams">▦ Team Management</button>
+  <button class="nav" data-view="history">◷ Auction History</button>
+  <div class="sidebar-note"><b>QUICK GUIDE</b><p>Select a player, start the auction, and click a team's button to place a bid. Each click increases the bid by ৳5 lakh.</p></div>
+  <button id="resetDemo" class="reset-link">Reset current auction</button>
+</aside>
 
-<nav class="tabs">
-<button class="tab active" data-tab="live">Live Auction</button>
-<button class="tab" data-tab="players">Players</button>
-<button class="tab" data-tab="teams">Teams</button>
-<button class="tab" data-tab="history">Sales History</button>
-<button class="tab" data-tab="settings">Settings</button>
-</nav>
+<main class="content">
+<section id="view-auction" class="view active">
+  <div class="page-heading">
+    <div><h1>Live Auction</h1><p class="muted">Control room · <span id="auctionSportName">Cricket</span></p></div>
+    <span id="auctionState" class="auction-state">WAITING TO START</span>
+  </div>
+  <div id="teamSummary" class="team-grid"></div>
 
-<div id="message"></div>
+  <div class="auction-grid">
+    <div class="panel">
+      <div class="panel-head"><h2>Current Player</h2><span id="playerCategory" class="tag">NO PLAYER</span></div>
+      <div class="player-feature">
+        <div id="currentPhoto" class="player-photo">PLAYER<br>PHOTO</div>
+        <div class="player-info">
+          <h2 id="currentName">Select a player for next</h2>
+          <p id="currentMeta" class="muted">Choose a player from the queue to begin.</p>
+          <div class="price-row">
+            <div><small>BASE PRICE</small><b id="basePrice">—</b></div>
+            <div><small>CURRENT BID</small><b id="currentPrice" class="live-price">—</b></div>
+          </div>
+          <span id="leadingTeam" class="leading">No active bid yet</span>
+        </div>
+      </div>
+      <div class="panel-actions">
+        <button id="startAuction" class="btn btn-success">Start Auction</button>
+        <button id="nextPlayer" class="btn btn-primary">Next Player</button>
+        <button id="pauseAuction" class="btn btn-ghost">Pause</button>
+      </div>
+    </div>
 
-<section id="view-live">
-<div class="stats" id="stats"></div>
-<div class="grid" style="margin-top:14px">
+    <div class="panel">
+      <div class="panel-head"><h2>Place Your Bid</h2><span class="tag">+ ৳5 LAKH</span></div>
+      <div id="bidButtons" class="bid-buttons"></div>
+      <p class="bid-hint">Each team button increases the current bid by ৳5 lakh. Teams with insufficient budgets cannot bid.</p>
+      <div class="result-actions">
+        <button id="soldBtn" class="btn btn-success">SOLD</button>
+        <button id="unsoldBtn" class="btn btn-danger">UNSOLD</button>
+        <button id="undoBid" class="btn btn-ghost">Undo Bid</button>
+      </div>
+    </div>
+  </div>
 
-<div class="span7 card">
-<div class="row between">
-<h2 class="section-title">Current Player</h2>
-<span class="pill" id="pauseLabel">LIVE</span>
-</div>
-
-<div id="focusPlayer" class="player-focus">
-<div class="photo placeholder">🏏</div>
-<div>
-<h2>No player selected</h2>
-<p class="muted">Select a player from the Players tab to begin bidding.</p>
-</div>
-</div>
-
-<div class="row between" style="margin-top:15px">
-<div>
-<div class="muted small">CURRENT BID</div>
-<div class="price" id="currentBid">৳0</div>
-<div class="muted small" id="leadingTeam">No leading team</div>
-</div>
-<div class="admin-actions">
-<button class="secondary" id="pauseBtn">Pause</button>
-<button class="outline" id="undoBidBtn">Undo Bid</button>
-</div>
-</div>
-
-<div class="notice" id="bidHint">Choose a team to place the next bid.</div>
-<div id="bidTeams" class="team-grid"></div>
-
-<div class="admin-actions" style="margin-top:14px">
-<button class="gold" id="soldBtn">SOLD</button>
-<button class="danger" id="unsoldBtn">UNSOLD</button>
-<button class="secondary" id="clearPlayerBtn">Clear Player</button>
-</div>
-</div>
-
-<div class="span5 card">
-<h2 class="section-title">Team Budgets</h2>
-<div id="teamBudgets" class="list"></div>
-<div style="margin-top:18px">
-<h3 class="section-title">Available Players</h3>
-<input id="quickSearch" placeholder="Search player...">
-<div id="quickPlayers" class="list" style="margin-top:10px;max-height:370px;overflow:auto"></div>
-</div>
-</div>
-</div>
+  <div class="panel">
+    <div class="panel-head"><h2>Player Queue</h2><span class="tag" id="playerCount">0 PLAYERS</span></div>
+    <div class="queue-filters">
+      <button class="queue-filter active" data-category-filter="ALL">ALL <span id="countAll">0</span></button>
+      <button class="queue-filter" data-category-filter="A">CATEGORY A <span id="countA">0</span></button>
+      <button class="queue-filter" data-category-filter="B">CATEGORY B <span id="countB">0</span></button>
+      <button class="queue-filter" data-category-filter="C">CATEGORY C <span id="countC">0</span></button>
+    </div>
+    <div id="queueList" class="queue-list"></div>
+  </div>
 </section>
 
-<section id="view-players" class="hidden">
-<div class="grid">
-<div class="span4 card">
-<h2 class="section-title">Add Player</h2>
-<label>Player name</label>
-<input id="pName" placeholder="Full name">
-<label>Category</label>
-<select id="pCategory">
-<option value="A">Category A</option>
-<option value="B">Category B</option>
-<option value="C">Category C</option>
-</select>
-<label>Base price (BDT)</label>
-<input id="pPrice" type="number" min="0" placeholder="6000000">
-<label>Player photo (optional)</label>
-<input id="pPhoto" type="file" accept="image/png,image/jpeg,image/webp">
-<button id="addPlayerBtn" style="width:100%;margin-top:14px">Add Player</button>
-</div>
-
-<div class="span8 card">
-<div class="row between">
-<h2 class="section-title">Player List</h2>
-<select id="playerFilter" style="max-width:150px">
-<option value="all">All players</option>
-<option value="available">Available</option>
-<option value="sold">Sold</option>
-<option value="unsold">Unsold</option>
-</select>
-</div>
-<input id="playerSearch" placeholder="Search player...">
-<div id="playersList" class="list" style="margin-top:12px"></div>
-</div>
-</div>
+<section id="view-players" class="view">
+  <div class="page-heading"><div><h1>Player Management</h1><p class="muted">Add and manage auction players</p></div></div>
+  <div class="panel">
+    <h2>Add New Player</h2>
+    <form id="playerForm" class="player-form">
+      <label>Player Name<input id="playerName" required placeholder="Enter player name"></label>
+      <label>Category<select id="playerCat"><option value="A">Category A · ৳60 lakh</option><option value="B">Category B · ৳40 lakh</option><option value="C">Category C · ৳20 lakh</option></select></label>
+      <label>Player Photo<input id="playerImage" type="file" accept="image/*"></label>
+      <button class="btn btn-primary" type="submit">Add Player</button>
+    </form>
+    <p class="muted tiny">Photos are uploaded to the Supabase Storage bucket named <b>player-photos</b>.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><h2>All Players</h2><span class="tag" id="playerCount2">0 PLAYERS</span></div>
+    <div id="playerTable" class="table-wrap"></div>
+  </div>
 </section>
 
-<section id="view-teams" class="hidden">
-<div class="grid">
-<div class="span4 card">
-<h2 class="section-title">Add Team</h2>
-<label>Team name</label>
-<input id="tName" placeholder="Team name">
-<label>Team color</label>
-<input id="tColor" type="color" value="#2878E8">
-<button id="addTeamBtn" style="width:100%;margin-top:14px">Add Team</button>
-<p class="small muted">New teams start with ৳1 crore budget. Edit team name and color below.</p>
-</div>
-<div class="span8 card">
-<h2 class="section-title">Manage Teams</h2>
-<div id="teamsList" class="list"></div>
-</div>
-</div>
+<section id="view-teams" class="view">
+  <div class="page-heading"><div><h1>Team Management</h1><p class="muted">Edit team names and colours</p></div></div>
+  <div id="teamEditors" class="team-edit-grid"></div>
+  <div class="panel roster-panel">
+    <h2>Team-wise Squad Overview</h2>
+    <div id="teamRosters" class="team-rosters"></div>
+  </div>
 </section>
 
-<section id="view-history" class="hidden">
-<div class="card">
-<div class="row between">
-<h2 class="section-title">Sales History</h2>
-<button class="secondary" id="refreshHistory">Refresh</button>
+<section id="view-history" class="view">
+  <div class="page-heading"><div><h1>Auction History</h1><p class="muted">Completed auction results</p></div><button id="exportCsv" class="btn btn-primary">Export CSV</button></div>
+  <div class="panel"><div id="historyTable" class="table-wrap"></div></div>
+</section>
+</main>
 </div>
-<div id="historyList" class="list"></div>
 </div>
+
+<!-- PROJECTOR DISPLAY -->
+<section id="displayApp" class="display-page hidden">
+  <header class="display-header">
+    <div class="brand-mark">SPL</div>
+    <div><h1>SOCIOLOGY PREMIER LEAGUE</h1><p id="displaySubtitle">PLAYER AUCTION LIVE</p></div>
+    <span class="live-indicator">● LIVE AUCTION</span>
+  </header>
+  <div class="display-standings">
+    <div class="standings-heading"><div><span class="display-kicker">TEAM STANDINGS</span><h2>AUCTION LEAGUE TABLE</h2></div><span class="standings-note">LIVE BUDGET STATUS</span></div>
+    <div class="standings-wrap">
+      <table class="standings-table">
+        <thead><tr><th>TEAM</th><th>TOTAL BUDGET</th><th>PLAYERS BOUGHT</th><th>REMAINING</th></tr></thead>
+        <tbody id="displayTeams"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="display-main">
+    <div id="displayPhoto" class="display-player-photo">PLAYER PHOTO</div>
+    <div class="display-player-details">
+      <span id="displayCategory" class="display-tag">AUCTION</span>
+      <h2 id="displayName">AUCTION READY</h2>
+      <p id="displayStatus">Waiting for the next player</p>
+      <div class="display-price"><small>CURRENT BID</small><strong id="displayPrice">—</strong></div>
+      <div class="display-leading" id="displayLeading">NO ACTIVE BID</div>
+      <p>Base Price: <b id="displayBase">—</b></p>
+    </div>
+  </div>
+  <footer class="display-footer">
+    <span>MINIMUM BID INCREMENT: <b>৳5 LAKH</b></span>
+    <span>SOLD PLAYERS: <b id="displaySoldCount">0 PLAYERS SOLD</b></span>
+    <span id="displaySportFooter">SPL AUCTION</span>
+  </footer>
+  <button id="exitDisplay" class="display-exit">Exit Display</button>
 </section>
 
-<section id="view-settings" class="hidden">
-<div class="grid">
-<div class="span6 card">
-<h2 class="section-title">Auction Settings</h2>
-<label>Bid increment (BDT)</label>
-<input id="increment" type="number" min="1">
-<button id="saveSettings" style="margin-top:12px">Save Settings</button>
-<div class="notice">Suggested base prices: A ৳60 lakh · B ৳40 lakh · C ৳20 lakh</div>
-</div>
-
-<div class="span6 card">
-<h2 class="section-title">Auction Controls</h2>
-<label>Auction title</label>
-<input id="auctionTitle">
-<button id="saveTitle" style="margin-top:12px">Save Title</button>
-<p class="muted small">This panel manages Cricket Auction data only.</p>
-<button class="secondary" id="projectorCopy">Copy Projector Link</button>
-</div>
-</div>
-</section>
-
-<div class="footer">SPL CRICKET AUCTION MANAGER · Admin control panel</div>
-</div>
-</div>
-
-<div id="projectorView" class="projector hidden">
-<header class="top">
-<div class="brand">SPL <span>CRICKET LIVE AUCTION</span></div>
-<div class="row">
-<button class="outline" id="exitProjector">Admin Panel</button>
-</div>
-</header>
-
-<div class="focus card">
-<div class="row between">
-<h2 id="projTitle">Cricket Auction</h2>
-<span class="pill" id="projStatus">LIVE</span>
-</div>
-<div id="projPlayer" class="player-focus" style="margin-top:20px">
-<div class="photo placeholder">🏆</div>
-<div>
-<h1>Waiting for next player</h1>
-<p class="muted">Auction will appear here</p>
-</div>
-</div>
-<div style="margin-top:25px">
-<div class="muted">CURRENT BID</div>
-<div class="price" id="projBid">৳0</div>
-<h2 id="projTeam">No leading team</h2>
-</div>
-</div>
-
-<div class="stats" id="projStats"></div>
-<h2 style="margin-top:25px">TEAM BUDGETS</h2>
-<div class="team-grid" id="projTeams"></div>
-<div class="footer">SPL · OFFICIAL LIVE DISPLAY</div>
+<!-- SOLD CARD MODAL -->
+<div id="soldModal" class="modal hidden">
+  <div class="modal-card">
+    <button id="closeModal" class="modal-close">×</button>
+    <h2>Player Sold Successfully!</h2>
+    <div id="soldCardPreview" class="sold-card-preview"></div>
+    <div class="modal-actions">
+      <button id="downloadCard" class="btn btn-primary">Download PNG</button>
+      <button id="closeModal2" class="btn btn-ghost">Close</button>
+    </div>
+  </div>
 </div>
 
 <script>
-(()=>{
-'use strict';
+/* ================= SUPABASE CONFIGURATION ================= */
+const SUPABASE_URL = 'https://vwsodzsimnrvigrxeusr.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_nV6AWGiuN2asXdZFjSIYBg_4BNp7DdD';
 
-const SUPABASE_URL='https://vwsodzsimnrvigrxeusr.supabase.co';
-const SUPABASE_KEY='sb_publishable_nV6AWGiuN2asXdZFjSIYBg_4BNp7DdD';
-const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const CRICKET_ID = '22222222-2222-4222-8222-222222222222';
+const FOOTBALL_ID = '11111111-1111-4111-8111-111111111111';
+const PHOTO_BUCKET = 'player-photos';
 
-const AUCTION_ID='22222222-2222-4222-8222-222222222222';
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let sport='cricket';
-let tab='live';
-let teams=[];
-let players=[];
-let sales=[];
-let state=null;
-let settings=null;
-let session=null;
-let photoUrls={};
-let channel=null;
-let projector=false;
+let currentSport = 'cricket';
+let auctionId = CRICKET_ID;
+let currentUser = null;
+let state = {
+  teams:[], players:[], sales:[], bids:[],
+  current_player_id:null, leading_team_id:null,
+  current_bid:0, is_paused:false, status:'WAITING TO START'
+};
+let settings = {bid_increment:500000,category_a_base:6000000,category_b_base:4000000,category_c_base:2000000};
+let bidUndo = [];
+let lastSale = null;
+let queueCategoryFilter = 'ALL';
+let refreshTimer = null;
+let realtimeChannel = null;
 
-const $=id=>document.getElementById(id);
-const money=n=>'৳'+Number(n||0).toLocaleString('en-IN');
-const crore=n=>(Number(n||0)/10000000).toFixed(2)+' Cr';
-const auctionId=()=>AUCTION_ID;
+const $ = id => document.getElementById(id);
+const sportTitle = () => currentSport === 'cricket' ? 'CRICKET' : 'FOOTBALL';
+const activePlayer = () => state.players.find(p => p.id === state.current_player_id);
+const findTeam = id => state.teams.find(t => t.id === id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money = n => '৳' + (Number(n||0)/100000).toLocaleString('en-US',{maximumFractionDigits:2}) + ' lakh';
+const moneyCr = n => '৳' + (Number(n||0)/10000000).toFixed(2) + ' Cr';
 
-function msg(s,err=false){
- $('message').innerHTML=s?`<div class="notice ${err?'error':'good'}">${s}</div>`:'';
-}
-function loginMsg(s){
- $('loginMsg').innerHTML=s?`<div class="notice error">${s}</div>`:'';
-}
-function esc(s){
- return String(s??'').replace(/[&<>"']/g,c=>({
- '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
- }[c]));
-}
-function playerPhoto(p,cls='photo'){
- return photoUrls[p.id]
- ?`<img class="${cls}" src="${photoUrls[p.id]}" alt="">`
- :`<div class="${cls} placeholder">🏏</div>`;
-}
+function message(text){alert(text)}
+function setLoginMessage(text){$('loginMessage').textContent=text}
+function showLogin(){ $('loginScreen').classList.remove('hidden');$('sportScreen').classList.add('hidden');$('adminApp').classList.add('hidden');$('displayApp').classList.add('hidden') }
+function showSportSelect(){ $('loginScreen').classList.add('hidden');$('sportScreen').classList.remove('hidden');$('adminApp').classList.add('hidden');$('displayApp').classList.add('hidden') }
+function showAdmin(){ $('loginScreen').classList.add('hidden');$('sportScreen').classList.add('hidden');$('adminApp').classList.remove('hidden');$('displayApp').classList.add('hidden') }
+function showDisplay(){ $('loginScreen').classList.add('hidden');$('sportScreen').classList.add('hidden');$('adminApp').classList.add('hidden');$('displayApp').classList.remove('hidden');document.body.style.background='#0b1425' }
 
-async function signedPhotos(){
- photoUrls={};
- for(const p of players){
-  if(p.photo_url){
-   const {data,error}=await db.storage.from('player-photos').createSignedUrl(p.photo_url,3600);
-   if(!error&&data?.signedUrl)photoUrls[p.id]=data.signedUrl;
-  }
- }
-}
-
-async function adminCheck(){
- const {data,error}=await db.rpc('is_spl_admin');
- if(error||data!==true){
-  throw new Error('Admin permission check failed. Check your admin account and is_spl_admin() function.');
- }
+async function checkAdmin(){
+  const {data,error} = await db.rpc('is_spl_admin');
+  if(error) throw error;
+  if(data !== true) throw new Error('This account is not authorised as an SPL admin.');
 }
 
 async function login(){
- $('loginBtn').disabled=true;
- loginMsg('');
- try{
-  const {error}=await db.auth.signInWithPassword({
-   email:$('email').value.trim(),
-   password:$('password').value
-  });
-  if(error)throw error;
-  await adminCheck();
-  await boot();
- }catch(e){
-  loginMsg(e.message||'Login failed');
- }finally{
-  $('loginBtn').disabled=false;
- }
+  const email=$('loginEmail').value.trim(),password=$('loginPassword').value;
+  if(!email||!password){setLoginMessage('Enter your email and password.');return}
+  $('loginBtn').disabled=true;$('loginBtn').textContent='Logging in...';
+  try{
+    const {data,error}=await db.auth.signInWithPassword({email,password});
+    if(error) throw error;
+    currentUser=data.user;
+    await checkAdmin();
+    showSportSelect();
+  }catch(e){
+    await db.auth.signOut();
+    setLoginMessage(e.message || 'Login failed.');
+  }finally{$('loginBtn').disabled=false;$('loginBtn').textContent='Log In'}
 }
 
-async function boot(){
- $('loginBox').classList.add('hidden');
- $('main').classList.remove('hidden');
- try{
-  await loadAll();
-  subscribe();
-  if(new URLSearchParams(location.search).get('view')==='projector'){
-   openProjector();
+async function logout(){
+  if(realtimeChannel) await db.removeChannel(realtimeChannel);
+  if(refreshTimer) clearInterval(refreshTimer);
+  await db.auth.signOut();
+  currentUser=null;
+  showLogin();
+}
+
+async function chooseSport(sport){
+  currentSport=sport;
+  auctionId=sport==='cricket'?CRICKET_ID:FOOTBALL_ID;
+  queueCategoryFilter='ALL';bidUndo=[];lastSale=null;
+  showAdmin();
+  $('sportLabel').textContent=sportTitle()+' AUCTION';
+  $('auctionSportName').textContent=sportTitle();
+  $('displaySubtitle').textContent=sportTitle()+' PLAYER AUCTION LIVE';
+  $('displaySportFooter').textContent='SPL '+sportTitle()+' AUCTION';
+  try{
+    await loadAuction();
+    subscribeRealtime();
+  }catch(e){message('Could not load auction data: '+e.message)}
+}
+
+async function loadAuction(){
+  const [teamsRes,playersRes,salesRes,bidsRes,stateRes,settingsRes] = await Promise.all([
+    db.from('teams').select('*').eq('auction_id',auctionId).order('created_at'),
+    db.from('players').select('*').eq('auction_id',auctionId).order('created_at'),
+    db.from('sales').select('*').eq('auction_id',auctionId).order('created_at'),
+    db.from('bids').select('*').eq('auction_id',auctionId).order('created_at'),
+    db.from('auction_state').select('*').eq('auction_id',auctionId).maybeSingle(),
+    db.from('auction_settings').select('*').eq('auction_id',auctionId).maybeSingle()
+  ]);
+  for(const r of [teamsRes,playersRes,salesRes,bidsRes,stateRes,settingsRes]) if(r.error) throw r.error;
+  state.teams=teamsRes.data||[];
+  state.players=playersRes.data||[];
+  state.sales=salesRes.data||[];
+  state.bids=bidsRes.data||[];
+  if(stateRes.data){
+    state.current_player_id=stateRes.data.current_player_id;
+    state.leading_team_id=stateRes.data.leading_team_id;
+    state.current_bid=Number(stateRes.data.current_bid||0);
+    state.is_paused=!!stateRes.data.is_paused;
+    state.status=state.is_paused?'PAUSED':(state.current_player_id?'LIVE':'WAITING TO START');
+  }else{
+    state.current_player_id=null;state.leading_team_id=null;state.current_bid=0;state.is_paused=false;state.status='WAITING TO START';
   }
- }catch(e){
-  msg('Auction loading failed: '+(e.message||String(e)),true);
- }
+  if(settingsRes.data) settings={...settings,...settingsRes.data};
+  await signPlayerPhotos();
+  renderAll();
 }
 
-async function loadAll(){
- msg('Loading Cricket Auction data...');
- const aid=auctionId();
-
- const [t,p,s,st,se,ss]=await Promise.all([
-  db.from('teams').select('*').eq('auction_id',aid).order('created_at'),
-  db.from('players').select('*').eq('auction_id',aid).order('created_at',{ascending:false}),
-  db.from('sales').select('*').eq('auction_id',aid).order('created_at',{ascending:false}),
-  db.from('auction_state').select('*').eq('auction_id',aid).maybeSingle(),
-  db.from('auction_settings').select('*').eq('auction_id',aid).maybeSingle(),
-  db.from('auction_sessions').select('*').eq('id',aid).maybeSingle()
- ]);
-
- for(const x of [t,p,s,st,se,ss]){
-  if(x.error)throw x.error;
- }
-
- teams=t.data||[];
- players=p.data||[];
- sales=s.data||[];
- state=st.data;
- settings=se.data;
- session=ss.data;
-
- if(!session)throw new Error('Cricket Auction session not found. Check auction_sessions table and Cricket auction ID.');
- if(!state)throw new Error('Cricket auction_state row not found for this auction ID.');
- if(!settings)throw new Error('Cricket auction_settings row not found for this auction ID.');
-
- await signedPhotos();
- render();
- msg('');
+async function signPlayerPhotos(){
+  for(const p of state.players){
+    if(p.photo_url && !p.photo_url.startsWith('http')){
+      const {data}=await db.storage.from(PHOTO_BUCKET).createSignedUrl(p.photo_url,3600);
+      p.display_photo=data?.signedUrl||'';
+    }else p.display_photo=p.photo_url||'';
+  }
 }
 
-function render(){
- $('auctionStatus').textContent=String(session?.status||'READY').toUpperCase();
- $('pauseLabel').textContent=state?.is_paused?'PAUSED':'LIVE';
- $('pauseBtn').textContent=state?.is_paused?'Resume':'Pause';
- $('currentBid').textContent=money(state?.current_bid);
-
- const lead=teams.find(t=>t.id===state?.leading_team_id);
- $('leadingTeam').textContent=lead?'Leading: '+lead.name:'No leading team';
-
- $('stats').innerHTML=[
-  ['Teams',teams.length],
-  ['Players',players.length],
-  ['Sold',players.filter(p=>p.status==='sold').length],
-  ['Remaining',players.filter(p=>p.status==='available').length]
- ].map(x=>`<div class="stat"><span class="muted">${x[0]}</span><b>${x[1]}</b></div>`).join('');
-
- const p=players.find(x=>x.id===state?.current_player_id);
-
- $('focusPlayer').innerHTML=p
- ?`${playerPhoto(p)}<div><span class="pill">CATEGORY ${esc(p.category)}</span><h2>${esc(p.name)}</h2><div class="muted">Base price: ${money(p.base_price)}</div><div class="muted">Status: ${esc(p.status)}</div></div>`
- :`<div class="photo placeholder">🏏</div><div><h2>No player selected</h2><p class="muted">Choose a player from the list below.</p></div>`;
-
- $('bidTeams').innerHTML=teams.map(t=>`
- <div class="team">
- <b>${esc(t.name)}</b>
- <div class="muted small">Budget ${money(t.remaining_budget)}</div>
- <button ${!p||p.status!=='available'||state?.is_paused?'disabled':''} data-bid="${t.id}">
- Bid +${money(settings?.bid_increment||500000)}
- </button>
- </div>`).join('');
-
- $('teamBudgets').innerHTML=teams.map(t=>`
- <div class="item">
- <span style="width:10px;height:38px;border-radius:6px;background:${esc(t.color||'#4389ed')}"></span>
- <div class="grow"><strong>${esc(t.name)}</strong><span class="muted small">${crore(t.remaining_budget)} remaining</span></div>
- <b>${money(t.remaining_budget)}</b>
- </div>`).join('');
-
- renderQuick();
- renderPlayers();
- renderTeams();
- renderHistory();
-
- $('increment').value=settings?.bid_increment||500000;
- $('auctionTitle').value=session?.title||'';
- renderProjector();
+function subscribeRealtime(){
+  if(realtimeChannel) db.removeChannel(realtimeChannel);
+  realtimeChannel=db.channel('spl-'+auctionId)
+    .on('postgres_changes',{event:'*',schema:'public',table:'teams',filter:'auction_id=eq.'+auctionId},()=>loadQuietly())
+    .on('postgres_changes',{event:'*',schema:'public',table:'players',filter:'auction_id=eq.'+auctionId},()=>loadQuietly())
+    .on('postgres_changes',{event:'*',schema:'public',table:'sales',filter:'auction_id=eq.'+auctionId},()=>loadQuietly())
+    .on('postgres_changes',{event:'*',schema:'public',table:'auction_state',filter:'auction_id=eq.'+auctionId},()=>loadQuietly())
+    .on('postgres_changes',{event:'*',schema:'public',table:'bids',filter:'auction_id=eq.'+auctionId},()=>loadQuietly())
+    .subscribe();
+}
+let loadingQuietly=false;
+async function loadQuietly(){
+  if(loadingQuietly)return;
+  loadingQuietly=true;
+  try{await loadAuction()}catch(e){console.error(e)}
+  loadingQuietly=false;
 }
 
-function renderQuick(){
- const q=($('quickSearch').value||'').toLowerCase();
- $('quickPlayers').innerHTML=players
- .filter(p=>p.status==='available'&&p.name.toLowerCase().includes(q))
- .map(p=>`
- <div class="item">
- <div class="grow"><strong>${esc(p.name)}</strong><span class="muted small">Cat ${esc(p.category)} · ${money(p.base_price)}</span></div>
- <button class="secondary" data-select="${p.id}">Select</button>
- </div>`).join('')||'<p class="muted">No available players.</p>';
+async function updateAuctionState(values){
+  const {error}=await db.from('auction_state').update(values).eq('auction_id',auctionId);
+  if(error) throw error;
 }
 
-function renderPlayers(){
- const q=($('playerSearch').value||'').toLowerCase();
- const f=$('playerFilter').value;
-
- $('playersList').innerHTML=players
- .filter(p=>(f==='all'||p.status===f)&&p.name.toLowerCase().includes(q))
- .map(p=>`
- <div class="item">
- ${playerPhoto(p,'photo')}
- <div class="grow"><strong>${esc(p.name)}</strong><span class="muted small">Category ${esc(p.category)} · ${money(p.base_price)} · ${esc(p.status)}</span></div>
- <span class="pill ${p.status}">${esc(p.status)}</span>
- ${p.status==='available'?`<button class="secondary" data-select="${p.id}">Select</button>`:''}
- <button class="outline" data-editplayer="${p.id}">Edit</button>
- </div>`).join('')||'<p class="muted">No players found.</p>';
+function renderAll(){
+  renderTeams();renderAuction();renderPlayers();renderTeamEditors();renderRosters();renderHistory();renderDisplay();
 }
 
 function renderTeams(){
- $('teamsList').innerHTML=teams.map(t=>`
- <div class="item">
- <span style="width:12px;height:42px;border-radius:5px;background:${esc(t.color||'#4389ed')}"></span>
- <div class="grow"><strong>${esc(t.name)}</strong><span class="muted small">Initial ${money(t.initial_budget)} · Remaining ${money(t.remaining_budget)}</span></div>
- <button class="secondary" data-editteam="${t.id}">Edit</button>
- </div>`).join('')||'<p class="muted">No teams.</p>';
+  $('teamSummary').innerHTML=state.teams.map(t=>{
+    const spent=Number(t.initial_budget||100000000)-Number(t.remaining_budget||0);
+    const count=state.players.filter(p=>p.team_id===t.id&&p.status==='sold').length;
+    const percent=Math.max(0,Math.min(100,spent/1000000));
+    return `<div class="team-card"><div class="team-top"><span class="team-name"><i class="team-dot" style="background:${esc(t.color||'#3567e8')}"></i>${esc(t.name)}</span><span class="tag">${count} PLAYERS</span></div><div class="team-budget">${moneyCr(t.remaining_budget)}</div><div class="team-sub">Remaining budget · Spent ${moneyCr(spent)}</div><div class="progress"><span style="width:${percent}%;background:${esc(t.color||'#3567e8')}"></span></div></div>`;
+  }).join('');
+}
+
+function renderAuction(){
+  const p=activePlayer();
+  $('auctionState').textContent=state.status;
+  $('playerCategory').textContent=p?'CATEGORY '+p.category:'NO PLAYER';
+  $('currentName').textContent=p?p.name:'Select a player for next';
+  $('currentMeta').textContent=p?`Player ID: ${p.id.slice(0,8)} · ${(p.status||'available').toUpperCase()}`:'Choose a player from the queue to begin.';
+  $('basePrice').textContent=p?money(p.base_price):'—';
+  $('currentPrice').textContent=p?money(state.current_bid||p.base_price):'—';
+  $('leadingTeam').textContent=state.leading_team_id?(findTeam(state.leading_team_id)?.name||'Team')+' IS LEADING':'No active bid yet';
+  const photo=$('currentPhoto');
+  photo.style.backgroundImage=p&&p.display_photo?`url("${p.display_photo}")`:'';
+  photo.innerHTML=p&&p.display_photo?'':'<span>PLAYER<br>PHOTO</span>';
+  $('bidButtons').innerHTML=state.teams.map(t=>{
+    const next=Number(state.current_bid||p?.base_price||0)+Number(settings.bid_increment||500000);
+    const disabled=!p||state.status!=='LIVE'||t.id===state.leading_team_id||Number(t.remaining_budget)<next;
+    return `<button class="bid-team" data-bid="${t.id}" style="--bid-color:${esc(t.color||'#3567e8')}" ${disabled?'disabled':''}><b>${esc(t.name)}</b><span>${moneyCr(t.remaining_budget)} remaining</span><span>CLICK TO BID + ${money(settings.bid_increment||500000)}</span></button>`;
+  }).join('');
+  document.querySelectorAll('[data-bid]').forEach(b=>b.onclick=()=>placeBid(b.dataset.bid));
+  $('nextPlayer').textContent=p?'Next Player':'Select a player for next';
+  $('pauseAuction').textContent=state.status==='PAUSED'?'Resume':'Pause';
+  $('undoBid').disabled=!bidUndo.length;
+  const waiting=state.players.filter(x=>['available','unsold'].includes(x.status)&&x.id!==state.current_player_id);
+  const counts={ALL:waiting.length,A:waiting.filter(x=>x.category==='A').length,B:waiting.filter(x=>x.category==='B').length,C:waiting.filter(x=>x.category==='C').length};
+  $('countAll').textContent=counts.ALL;$('countA').textContent=counts.A;$('countB').textContent=counts.B;$('countC').textContent=counts.C;
+  document.querySelectorAll('[data-category-filter]').forEach(b=>{
+    b.classList.toggle('active',b.dataset.categoryFilter===queueCategoryFilter);
+    b.onclick=()=>{queueCategoryFilter=b.dataset.categoryFilter;renderAuction()};
+  });
+  const visible=waiting.filter(x=>queueCategoryFilter==='ALL'||x.category===queueCategoryFilter);
+  $('queueList').innerHTML=visible.map(x=>`<div class="queue-item"><span class="category-badge category-badge-${String(x.category).toLowerCase()}">CATEGORY ${esc(x.category)}</span><b>${esc(x.name)}</b><small>${money(x.base_price)} · ${x.status==='unsold'?'UNSOLD':'NOT AUCTIONED'}</small><button class="btn btn-small btn-primary" data-queue-select="${x.id}">Select player</button></div>`).join('')||`<span class="muted tiny">No players waiting in this category.</span>`;
+  document.querySelectorAll('[data-queue-select]').forEach(b=>b.onclick=()=>selectPlayer(b.dataset.queueSelect));
+}
+
+function renderPlayers(){
+  $('playerCount').textContent=state.players.length+' PLAYERS';
+  $('playerCount2').textContent=state.players.length+' PLAYERS';
+  $('playerTable').innerHTML=`<table class="table"><thead><tr><th>PLAYER</th><th>CATEGORY</th><th>BASE PRICE</th><th>STATUS</th><th>TEAM</th><th>ACTION</th></tr></thead><tbody>${state.players.map(p=>`<tr><td>${p.display_photo?`<img class="mini-photo" src="${p.display_photo}">`:'<span class="mini-photo" style="display:inline-block"></span>'}${esc(p.name)}</td><td>${esc(p.category)}</td><td>${money(p.base_price)}</td><td>${String(p.status).toUpperCase()}</td><td>${esc(findTeam(p.team_id)?.name||'—')}</td><td><button class="btn btn-small btn-ghost" data-select="${p.id}" ${p.status==='sold'?'disabled':''}>Select</button> <button class="btn btn-small btn-danger-outline" data-delete="${p.id}">Delete</button></td></tr>`).join('')}</tbody></table>`;
+  document.querySelectorAll('[data-select]').forEach(b=>b.onclick=()=>selectPlayer(b.dataset.select));
+  document.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>deletePlayer(b.dataset.delete));
+}
+
+function renderTeamEditors(){
+  $('teamEditors').innerHTML=state.teams.map(t=>`<div class="team-edit"><h2><i class="team-dot" style="background:${esc(t.color||'#3567e8')}"></i>${esc(t.name)}</h2><label>Team name<input id="teamname-${t.id}" value="${esc(t.name)}"></label><label style="display:block;margin-top:12px">Team colour<input id="teamcolor-${t.id}" type="color" value="${esc(t.color||'#3567e8')}"></label><button class="btn btn-primary" data-save-team="${t.id}">Save team</button><p class="muted tiny">Remaining budget: ${moneyCr(t.remaining_budget)}</p></div>`).join('');
+  document.querySelectorAll('[data-save-team]').forEach(b=>b.onclick=()=>saveTeam(b.dataset.saveTeam));
+}
+
+function renderRosters(){
+  $('teamRosters').innerHTML=state.teams.map(t=>{
+    const roster=state.players.filter(p=>p.team_id===t.id&&p.status==='sold');
+    return `<section class="roster-team" style="--roster-color:${esc(t.color||'#3567e8')}"><div class="roster-head"><b>${esc(t.name)}</b><span class="tag">${roster.length} PLAYERS</span></div>${roster.length?`<div class="roster-list">${roster.map(p=>`<div class="roster-player">${p.display_photo?`<img src="${p.display_photo}">`:'<span class="roster-placeholder">SPL</span>'}<div class="roster-player-info"><b>${esc(p.name)}</b><small>Category ${esc(p.category)} · ${money(p.sold_price)}</small></div></div>`).join('')}</div>`:'<p class="muted tiny">No players sold to this team yet.</p>'}</section>`;
+  }).join('');
 }
 
 function renderHistory(){
- $('historyList').innerHTML=sales.map(s=>`
- <div class="item">
- <div class="grow">
- <strong>${esc(s.player_name)}</strong>
- <span class="muted small">${esc(s.category)} · ${esc(teams.find(t=>t.id===s.team_id)?.name||'Team')} · ${new Date(s.created_at).toLocaleString()}</span>
- </div>
- <b>${money(s.sold_price)}</b>
- <button class="outline" data-card="${s.id}">Photo Card</button>
- <button class="danger" data-undosale="${s.id}">Undo Sale</button>
- </div>`).join('')||'<p class="muted">No sales yet.</p>';
+  $('historyTable').innerHTML=state.sales.length?`<table class="table"><thead><tr><th>PLAYER</th><th>TEAM</th><th>PRICE</th><th>CATEGORY</th><th>TIME</th></tr></thead><tbody>${[...state.sales].reverse().map(h=>`<tr><td>${esc(h.player_name)}</td><td>${esc(findTeam(h.team_id)?.name||'—')}</td><td>${money(h.sold_price)}</td><td>${esc(h.category)}</td><td>${new Date(h.created_at).toLocaleString()}</td></tr>`).join('')}</tbody></table>`:'<p class="muted">No auction results yet.</p>';
 }
 
+function renderDisplay(){
+  $('displayTeams').innerHTML=state.teams.map(t=>{
+    const count=state.players.filter(p=>p.team_id===t.id&&p.status==='sold').length;
+    return `<tr><td><span class="standings-team"><i class="standings-dot" style="--team:${esc(t.color||'#3567e8')}"></i>${esc(t.name)}</span></td><td>${moneyCr(t.initial_budget||100000000)}</td><td><span class="player-count-pill">${count}</span></td><td><strong class="remaining-money">${moneyCr(t.remaining_budget)}</strong></td></tr>`;
+  }).join('');
+  const p=activePlayer();
+  $('displayCategory').textContent=p?'CATEGORY '+p.category:'AUCTION';
+  $('displayName').textContent=p?p.name:'AUCTION READY';
+  $('displayStatus').textContent=p?state.status:'Waiting for the next player';
+  $('displayPrice').textContent=p?money(state.current_bid||p.base_price):'—';
+  $('displayBase').textContent=p?money(p.base_price):'—';
+  $('displayLeading').textContent=state.leading_team_id?(findTeam(state.leading_team_id)?.name||'TEAM')+' IS LEADING':'NO ACTIVE BID';
+  const photo=$('displayPhoto');
+  photo.style.backgroundImage=p&&p.display_photo?`url("${p.display_photo}")`:'';
+  photo.innerHTML=p&&p.display_photo?'':'<span>PLAYER<br>PHOTO</span>';
+  $('displaySoldCount').textContent=state.sales.length+' PLAYERS SOLD';
+}
+
+/* ================= AUCTION ACTIONS ================= */
 async function selectPlayer(id){
- const p=players.find(x=>x.id===id);
- if(!p||p.status!=='available')return;
-
- const {error}=await db.from('auction_state').update({
-  current_player_id:id,
-  leading_team_id:null,
-  current_bid:p.base_price,
-  updated_at:new Date().toISOString()
- }).eq('auction_id',auctionId());
-
- if(error)return msg(error.message,true);
-
- await loadAll();
- switchTab('live');
+  const p=state.players.find(x=>x.id===id);
+  if(!p||!['available','unsold'].includes(p.status))return;
+  try{
+    bidUndo=[];
+    await updateAuctionState({current_player_id:id,leading_team_id:null,current_bid:Number(p.base_price),is_paused:false});
+    state.current_player_id=id;state.leading_team_id=null;state.current_bid=Number(p.base_price);state.status='READY';
+    renderAll();document.querySelector('[data-view="auction"]').click();
+  }catch(e){message(e.message)}
 }
 
-async function bid(teamId){
- if(!state?.current_player_id||state.is_paused)return;
-
- const t=teams.find(x=>x.id===teamId);
- const p=players.find(x=>x.id===state.current_player_id);
- if(!t||!p)return;
-
- const amount=Number(state.current_bid||p.base_price)+Number(settings?.bid_increment||500000);
-
- if(t.remaining_budget<amount){
-  return msg('This team does not have enough budget for this bid.',true);
- }
-
- const {error:e1}=await db.from('bids').insert({
-  player_id:p.id,
-  team_id:teamId,
-  bid_amount:amount,
-  auction_id:auctionId()
- });
-
- if(e1)return msg(e1.message,true);
-
- const {error:e2}=await db.from('auction_state').update({
-  current_bid:amount,
-  leading_team_id:teamId,
-  updated_at:new Date().toISOString()
- }).eq('auction_id',auctionId());
-
- if(e2)return msg('Bid record saved but live state update failed: '+e2.message,true);
-
- await loadAll();
-}
-
-async function finish(status){
- const p=players.find(x=>x.id===state?.current_player_id);
- if(!p)return msg('Select a player first.',true);
-
- if(status==='sold'){
-  const t=teams.find(x=>x.id===state.leading_team_id);
-  if(!t)return msg('No team has placed a bid.',true);
-
-  const amount=Number(state.current_bid);
-  if(t.remaining_budget<amount)return msg('Insufficient team budget.',true);
-
-  if(!confirm(`Sell ${p.name} to ${t.name} for ${money(amount)}?`))return;
-
-  const {error:e1}=await db.from('teams').update({
-   remaining_budget:Number(t.remaining_budget)-amount
-  }).eq('id',t.id);
-
-  if(e1)return msg(e1.message,true);
-
-  const {error:e2}=await db.from('players').update({
-   status:'sold',
-   team_id:t.id,
-   sold_price:amount
-  }).eq('id',p.id);
-
-  if(e2)return msg('Budget updated but player update failed. Check database before continuing: '+e2.message,true);
-
-  const {error:e3}=await db.from('sales').insert({
-   player_id:p.id,
-   team_id:t.id,
-   player_name:p.name,
-   category:p.category,
-   sold_price:amount,
-   photo_url:p.photo_url,
-   auction_id:auctionId()
-  });
-
-  if(e3)return msg('Player updated but sales history insert failed. Check database: '+e3.message,true);
-
- }else{
-  const {error}=await db.from('players').update({
-   status:'unsold'
-  }).eq('id',p.id);
-
-  if(error)return msg(error.message,true);
- }
-
- const {error:stateError}=await db.from('auction_state').update({
-  current_player_id:null,
-  leading_team_id:null,
-  current_bid:0,
-  updated_at:new Date().toISOString()
- }).eq('auction_id',auctionId());
-
- if(stateError)return msg(stateError.message,true);
-
- await loadAll();
- msg(status==='sold'?'Player sold successfully.':'Player marked unsold.');
-}
-
-async function undoBid(){
- if(!state?.current_player_id)return msg('No active player.',true);
-
- const {data,error}=await db.from('bids').select('*')
- .eq('auction_id',auctionId())
- .eq('player_id',state.current_player_id)
- .order('created_at',{ascending:false})
- .limit(1).maybeSingle();
-
- if(error||!data)return msg('No bid available to undo.',true);
-
- const {error:del}=await db.from('bids').delete().eq('id',data.id);
- if(del)return msg(del.message,true);
-
- const {data:prev}=await db.from('bids').select('*')
- .eq('auction_id',auctionId())
- .eq('player_id',state.current_player_id)
- .order('created_at',{ascending:false})
- .limit(1).maybeSingle();
-
- const p=players.find(x=>x.id===state.current_player_id);
-
- const {error:updateError}=await db.from('auction_state').update({
-  current_bid:prev?.bid_amount||p.base_price,
-  leading_team_id:prev?.team_id||null,
-  updated_at:new Date().toISOString()
- }).eq('auction_id',auctionId());
-
- if(updateError)return msg(updateError.message,true);
-
- await loadAll();
- msg('Last bid undone.');
-}
-
-async function undoSale(id){
- if(!confirm('Undo this sale and restore the player and team budget?'))return;
-
- const s=sales.find(x=>x.id===id);
- if(!s)return;
-
- const t=teams.find(x=>x.id===s.team_id);
- if(!t)return msg('Team not found.',true);
-
- const {error:e1}=await db.from('teams').update({
-  remaining_budget:Number(t.remaining_budget)+Number(s.sold_price)
- }).eq('id',t.id);
-
- if(e1)return msg(e1.message,true);
-
- const {error:e2}=await db.from('players').update({
-  status:'available',
-  team_id:null,
-  sold_price:null
- }).eq('id',s.player_id);
-
- if(e2)return msg(e2.message,true);
-
- const {error:e3}=await db.from('sales').delete().eq('id',id);
- if(e3)return msg(e3.message,true);
-
- await loadAll();
- msg('Sale undone. Please verify the restored budget.');
-}
-
-async function addPlayer(){
- const name=$('pName').value.trim();
- const cat=$('pCategory').value;
- const price=Number($('pPrice').value||({A:6000000,B:4000000,C:2000000}[cat]));
-
- if(!name||price<0)return msg('Enter a valid player name and base price.',true);
-
- let path=null;
- const file=$('pPhoto').files[0];
-
- if(file){
-  if(file.size>2*1024*1024)return msg('Photo must be 2MB or smaller.',true);
-
-  path=`${auctionId()}/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;
-
-  const {error}=await db.storage.from('player-photos').upload(path,file,{
-   upsert:false,
-   contentType:file.type
-  });
-
-  if(error)return msg('Photo upload failed: '+error.message,true);
- }
-
- const {error}=await db.from('players').insert({
-  name,
-  category:cat,
-  base_price:price,
-  photo_url:path,
-  status:'available',
-  auction_id:auctionId()
- });
-
- if(error)return msg(error.message,true);
-
- $('pName').value='';
- $('pPhoto').value='';
-
- await loadAll();
- msg('Player added.');
-}
-
-async function addTeam(){
- const name=$('tName').value.trim();
- if(!name)return msg('Enter team name.',true);
-
- const {error}=await db.from('teams').insert({
-  name,
-  color:$('tColor').value,
-  initial_budget:100000000,
-  remaining_budget:100000000,
-  auction_id:auctionId()
- });
-
- if(error)return msg(error.message,true);
-
- $('tName').value='';
- await loadAll();
- msg('Team added with ৳1 crore budget.');
-}
-
-async function editTeam(id){
- const t=teams.find(x=>x.id===id);
- if(!t)return;
-
- const name=prompt('Team name',t.name);
- if(name===null)return;
-
- const color=prompt('Team color (hex)',t.color||'#2878E8');
- if(color===null)return;
-
- const {error}=await db.from('teams').update({
-  name:name.trim(),
-  color
- }).eq('id',id);
-
- if(error)return msg(error.message,true);
-
- await loadAll();
-}
-
-async function editPlayer(id){
- const p=players.find(x=>x.id===id);
- if(!p)return;
-
- const name=prompt('Player name',p.name);
- if(name===null)return;
-
- const price=prompt('Base price (BDT)',p.base_price);
- if(price===null)return;
-
- if(!name.trim()||!Number.isFinite(Number(price))||Number(price)<0){
-  return msg('Invalid player name or price.',true);
- }
-
- const {error}=await db.from('players').update({
-  name:name.trim(),
-  base_price:Number(price)
- }).eq('id',id);
-
- if(error)return msg(error.message,true);
-
- await loadAll();
-}
-
-async function saveSettings(){
- const v=Number($('increment').value);
-
- if(v<=0)return msg('Increment must be greater than zero.',true);
-
- const {error}=await db.from('auction_settings').update({
-  bid_increment:v
- }).eq('auction_id',auctionId());
-
- if(error)return msg(error.message,true);
-
- await loadAll();
- msg('Settings saved.');
-}
-
-function switchTab(t){
- tab=t;
- ['live','players','teams','history','settings'].forEach(x=>{
-  $('view-'+x).classList.toggle('hidden',x!==t);
- });
- document.querySelectorAll('[data-tab]').forEach(b=>{
-  b.classList.toggle('active',b.dataset.tab===t);
- });
-}
-
-function renderProjector(){
- const p=players.find(x=>x.id===state?.current_player_id);
- const lead=teams.find(t=>t.id===state?.leading_team_id);
-
- $('projTitle').textContent=session?.title||'Cricket Auction';
- $('projStatus').textContent=state?.is_paused?'PAUSED':'LIVE';
- $('projBid').textContent=money(state?.current_bid);
- $('projTeam').textContent=lead?.name||'No leading team';
-
- $('projPlayer').innerHTML=p
- ?`${playerPhoto(p)}<div><span class="pill">CATEGORY ${esc(p.category)}</span><h1 style="font-size:clamp(26px,5vw,64px)">${esc(p.name)}</h1><p class="muted">Base price ${money(p.base_price)}</p></div>`
- :`<div class="photo placeholder">🏆</div><div><h1>Waiting for next player</h1><p class="muted">The next player will appear here.</p></div>`;
-
- $('projStats').innerHTML=[
-  ['Players',players.length],
-  ['Sold',players.filter(x=>x.status==='sold').length],
-  ['Available',players.filter(x=>x.status==='available').length],
-  ['Sales',sales.length]
- ].map(x=>`<div class="stat"><span class="muted">${x[0]}</span><b>${x[1]}</b></div>`).join('');
-
- $('projTeams').innerHTML=teams.map(t=>`
- <div class="team">
- <b>${esc(t.name)}</b>
- <div class="muted">Remaining budget</div>
- <strong>${money(t.remaining_budget)}</strong>
- </div>`).join('');
-}
-
-function subscribe(){
- if(channel)db.removeChannel(channel);
-
- channel=db.channel('spl-cricket')
- .on('postgres_changes',{
-  event:'*',
-  schema:'public',
-  table:'auction_state',
-  filter:'auction_id=eq.'+auctionId()
- },()=>loadAll().catch(e=>msg(e.message,true)))
- .on('postgres_changes',{
-  event:'*',
-  schema:'public',
-  table:'players',
-  filter:'auction_id=eq.'+auctionId()
- },()=>loadAll().catch(e=>msg(e.message,true)))
- .on('postgres_changes',{
-  event:'*',
-  schema:'public',
-  table:'teams',
-  filter:'auction_id=eq.'+auctionId()
- },()=>loadAll().catch(e=>msg(e.message,true)))
- .on('postgres_changes',{
-  event:'*',
-  schema:'public',
-  table:'sales',
-  filter:'auction_id=eq.'+auctionId()
- },()=>loadAll().catch(e=>msg(e.message,true)))
- .subscribe();
-}
-
-function openProjector(){
- projector=true;
- $('main').classList.add('hidden');
- $('projectorView').classList.remove('hidden');
- renderProjector();
-}
-
-function closeProjector(){
- projector=false;
- $('projectorView').classList.add('hidden');
- $('main').classList.remove('hidden');
-}
-
-// Dynamic button actions
-document.addEventListener('click',async e=>{
- const b=e.target.closest('button');
- if(!b)return;
-
- try{
-  if(b.dataset.select)await selectPlayer(b.dataset.select);
-  if(b.dataset.bid)await bid(b.dataset.bid);
-  if(b.dataset.editteam)await editTeam(b.dataset.editteam);
-  if(b.dataset.editplayer)await editPlayer(b.dataset.editplayer);
-  if(b.dataset.undosale)await undoSale(b.dataset.undosale);
-  if(b.dataset.card)await makeCard(b.dataset.card);
- }catch(err){
-  msg(err.message||String(err),true);
- }
-});
-
-async function makeCard(id){
- const s=sales.find(x=>x.id===id);
- if(!s)return;
-
- const t=teams.find(x=>x.id===s.team_id);
- const c=document.createElement('canvas');
- c.width=1080;
- c.height=1350;
-
- const x=c.getContext('2d');
- const g=x.createLinearGradient(0,0,1080,1350);
- g.addColorStop(0,'#08172a');
- g.addColorStop(1,t?.color||'#174d3c');
-
- x.fillStyle=g;
- x.fillRect(0,0,1080,1350);
-
- x.strokeStyle='#d9b65d';
- x.lineWidth=8;
- x.strokeRect(35,35,1010,1280);
-
- x.textAlign='center';
- x.fillStyle='#f5c85c';
- x.font='bold 76px Arial';
- x.fillText('SPL CRICKET AUCTION',540,150);
-
- x.fillStyle='#fff';
- x.font='bold 42px Arial';
- x.fillText('PLAYER SOLD',540,230);
-
- if(s.photo_url){
-  const {data}=await db.storage.from('player-photos').createSignedUrl(s.photo_url,120);
-
-  if(data?.signedUrl){
-   const im=new Image();
-   im.crossOrigin='anonymous';
-
-   await new Promise(res=>{
-    im.onload=res;
-    im.onerror=res;
-    im.src=data.signedUrl;
-   });
-
-   if(im.complete&&im.naturalWidth){
-    x.save();
-    x.beginPath();
-    x.arc(540,555,230,0,Math.PI*2);
-    x.clip();
-    x.drawImage(im,310,325,460,460);
-    x.restore();
-   }
+async function startAuction(){
+  let p=activePlayer();
+  if(!p){
+    p=state.players.find(x=>['available','unsold'].includes(x.status));
+    if(!p){message('No available players. Add players first.');return}
+    await selectPlayer(p.id);
   }
- }
-
- x.fillStyle='#fff';
- x.font='bold 66px Arial';
- x.fillText(s.player_name,540,900);
-
- x.font='bold 36px Arial';
- x.fillStyle='#e6eaf2';
- x.fillText('CATEGORY '+s.category,540,970);
-
- x.fillStyle='#f5c85c';
- x.font='bold 78px Arial';
- x.fillText(money(s.sold_price),540,1100);
-
- x.fillStyle='#fff';
- x.font='bold 48px Arial';
- x.fillText(t?.name||'TEAM',540,1190);
-
- x.font='26px Arial';
- x.fillText('SPL · OFFICIAL CRICKET AUCTION',540,1260);
-
- const a=document.createElement('a');
- a.download='SPL-'+s.player_name.replace(/\W+/g,'-')+'-SOLD.png';
- a.href=c.toDataURL('image/png');
- a.click();
+  try{
+    await updateAuctionState({is_paused:false});
+    state.status='LIVE';renderAll();
+  }catch(e){message(e.message)}
 }
 
-// Main events
+async function placeBid(teamId){
+  const p=activePlayer(),t=findTeam(teamId);
+  if(!p||!t||state.status!=='LIVE')return;
+  const amount=Number(state.current_bid||p.base_price)+Number(settings.bid_increment||500000);
+  if(Number(t.remaining_budget)<amount){message('This team does not have enough remaining budget.');return}
+  try{
+    const old={current_bid:state.current_bid,leading_team_id:state.leading_team_id};
+    const {error:bidError}=await db.from('bids').insert({auction_id:auctionId,player_id:p.id,team_id:t.id,bid_amount:amount});
+    if(bidError)throw bidError;
+    await updateAuctionState({current_bid:amount,leading_team_id:t.id});
+    bidUndo.push(old);
+    state.current_bid=amount;state.leading_team_id=t.id;
+    await loadQuietly();
+  }catch(e){message('Bid failed: '+e.message)}
+}
+
+async function undoLastBid(){
+  if(!bidUndo.length)return;
+  const previous=bidUndo.pop();
+  try{
+    const latest=state.bids.filter(b=>b.player_id===state.current_player_id).slice(-1)[0];
+    if(latest){
+      const {error}=await db.from('bids').delete().eq('id',latest.id);
+      if(error)throw error;
+    }
+    await updateAuctionState({current_bid:previous.current_bid,leading_team_id:previous.leading_team_id});
+    await loadAuction();
+  }catch(e){message('Undo failed: '+e.message)}
+}
+
+async function finishAuction(result){
+  const p=activePlayer();
+  if(!p){message('Select a player first.');return}
+  if(result==='SOLD'&&!state.leading_team_id){message('No team has placed a bid yet.');return}
+  try{
+    if(result==='SOLD'){
+      const t=findTeam(state.leading_team_id);
+      const price=Number(state.current_bid);
+      if(!t||Number(t.remaining_budget)<price){message('Insufficient team budget.');return}
+      const newBudget=Number(t.remaining_budget)-price;
+      const {error:teamError}=await db.from('teams').update({remaining_budget:newBudget}).eq('id',t.id).eq('auction_id',auctionId);
+      if(teamError)throw teamError;
+      const {error:playerError}=await db.from('players').update({status:'sold',team_id:t.id,sold_price:price}).eq('id',p.id).eq('auction_id',auctionId);
+      if(playerError)throw playerError;
+      const {error:saleError}=await db.from('sales').insert({
+        auction_id:auctionId,player_id:p.id,team_id:t.id,player_name:p.name,
+        category:p.category,sold_price:price,photo_url:p.photo_url||null
+      });
+      if(saleError)throw saleError;
+      lastSale={player:{...p},team:{...t},price};
+    }else{
+      const {error}=await db.from('players').update({status:'unsold',team_id:null,sold_price:null}).eq('id',p.id).eq('auction_id',auctionId);
+      if(error)throw error;
+    }
+    await updateAuctionState({current_player_id:null,leading_team_id:null,current_bid:0,is_paused:false});
+    bidUndo=[];
+    await loadAuction();
+    if(result==='SOLD'&&lastSale)showSoldCard(lastSale);
+  }catch(e){
+    message('Could not complete the result: '+e.message+'. Please check the database before trying again.');
+    await loadQuietly();
+  }
+}
+
+async function pauseAuction(){
+  const paused=state.status!=='PAUSED';
+  try{
+    await updateAuctionState({is_paused:paused});
+    state.status=paused?'PAUSED':'LIVE';
+    renderAll();
+  }catch(e){message(e.message)}
+}
+
+async function deletePlayer(id){
+  if(!confirm('Delete this player?'))return;
+  try{
+    const p=state.players.find(x=>x.id===id);
+    if(p?.photo_url&&!p.photo_url.startsWith('http'))await db.storage.from(PHOTO_BUCKET).remove([p.photo_url]);
+    const {error}=await db.from('players').delete().eq('id',id).eq('auction_id',auctionId);
+    if(error)throw error;
+    await loadAuction();
+  }catch(e){message('Delete failed: '+e.message)}
+}
+
+async function saveTeam(id){
+  const name=$('teamname-'+id).value.trim();
+  const color=$('teamcolor-'+id).value;
+  try{
+    const {error}=await db.from('teams').update({name:name||'TEAM',color}).eq('id',id).eq('auction_id',auctionId);
+    if(error)throw error;
+    await loadAuction();
+  }catch(e){message('Could not save team: '+e.message)}
+}
+
+/* ================= PLAYER MANAGEMENT ================= */
+async function addPlayer(e){
+  e.preventDefault();
+  const name=$('playerName').value.trim(),category=$('playerCat').value,file=$('playerImage').files[0];
+  if(!name){message('Please enter a player name.');return}
+  const base={A:Number(settings.category_a_base||6000000),B:Number(settings.category_b_base||4000000),C:Number(settings.category_c_base||2000000)}[category];
+  let photoPath=null;
+  try{
+    if(file){
+      if(!file.type.startsWith('image/'))throw new Error('Please select an image file.');
+      if(file.size>2*1024*1024)throw new Error('Photo must be smaller than 2 MB.');
+      const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'');
+      photoPath=auctionId+'/'+crypto.randomUUID()+'.'+ext;
+      const {error:uploadError}=await db.storage.from(PHOTO_BUCKET).upload(photoPath,file,{contentType:file.type,upsert:false});
+      if(uploadError)throw uploadError;
+    }
+    const {error}=await db.from('players').insert({
+      auction_id:auctionId,name,category,base_price:base,
+      photo_url:photoPath,status:'available',team_id:null,sold_price:null
+    });
+    if(error)throw error;
+    $('playerForm').reset();
+    await loadAuction();
+    message('Player added successfully!');
+  }catch(err){
+    if(photoPath)await db.storage.from(PHOTO_BUCKET).remove([photoPath]);
+    message('Could not add player: '+err.message);
+  }
+}
+
+/* ================= SOLD PLAYER PHOTO CARD ================= */
+function makeCard(sale){
+  return new Promise(resolve=>{
+    const c=document.createElement('canvas');c.width=1080;c.height=1350;
+    const x=c.getContext('2d');
+    const g=x.createLinearGradient(0,0,1080,1350);
+    g.addColorStop(0,'#10243d');g.addColorStop(1,'#183d43');
+    x.fillStyle=g;x.fillRect(0,0,1080,1350);
+    x.fillStyle='#e8b94f';x.fillRect(0,0,1080,18);
+    x.textAlign='center';x.fillStyle='#fff';x.font='bold 42px Arial';
+    x.fillText('SOCIOLOGY PREMIER LEAGUE',540,100);
+    x.fillStyle='#b9d7d2';x.font='bold 24px Arial';
+    x.fillText(sportTitle()+' PLAYER AUCTION',540,145);
+    const draw=()=>{
+      x.fillStyle='#f4f6f8';x.beginPath();x.arc(540,390,205,0,Math.PI*2);x.fill();
+      if(img){
+        x.save();x.beginPath();x.arc(540,390,190,0,Math.PI*2);x.clip();
+        const scale=Math.max(380/img.width,380/img.height);
+        x.drawImage(img,540-img.width*scale/2,390-img.height*scale/2,img.width*scale,img.height*scale);
+        x.restore();
+      }else{x.fillStyle='#dce4e8';x.font='bold 30px Arial';x.fillText('PLAYER PHOTO',540,400)}
+      x.fillStyle='#f2bf4a';x.font='bold 78px Arial';x.fillText('SOLD!',540,690);
+      x.fillStyle='#fff';x.font='bold 58px Arial';
+      let name=String(sale.player.name||'PLAYER').toUpperCase();
+      if(x.measureText(name).width>930)x.font='bold 42px Arial';
+      x.fillText(name,540,770,930);
+      x.fillStyle='#c9d8e8';x.font='bold 28px Arial';x.fillText('CATEGORY '+sale.player.category,540,830);
+      x.fillStyle='#b9d7d2';x.font='bold 24px Arial';x.fillText('SOLD TO',540,930);
+      x.fillStyle='#fff';x.font='bold 58px Arial';
+      let tn=String(sale.team.name||'TEAM').toUpperCase();
+      if(x.measureText(tn).width>900)x.font='bold 42px Arial';
+      x.fillText(tn,540,1005,900);
+      x.fillStyle='#c9d8e8';x.font='bold 25px Arial';x.fillText('FINAL AUCTION PRICE',540,1100);
+      x.fillStyle='#f2bf4a';x.font='bold 76px Arial';x.fillText(money(sale.price),540,1190);
+      x.fillStyle='#d5e2e8';x.font='bold 22px Arial';x.fillText('SPL  •  THE AUCTION MOMENT',540,1290);
+      resolve(c);
+    };
+    let img=null;
+    if(sale.player.display_photo){
+      img=new Image();img.crossOrigin='anonymous';img.onload=draw;img.onerror=draw;img.src=sale.player.display_photo;
+    }else draw();
+  });
+}
+
+async function showSoldCard(sale){
+  const c=await makeCard(sale);
+  $('soldCardPreview').innerHTML='';$('soldCardPreview').appendChild(c);
+  $('soldModal').classList.remove('hidden');
+}
+async function downloadCard(){
+  if(!lastSale)return;
+  const c=await makeCard(lastSale);
+  const a=document.createElement('a');
+  a.download='SPL-'+String(lastSale.player.name).replace(/[^a-z0-9-]/gi,'-')+'-SOLD.png';
+  a.href=c.toDataURL('image/png');a.click();
+}
+
+/* ================= NAVIGATION / EXPORT ================= */
+function openView(view){
+  document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('active',n.dataset.view===view));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+view));
+}
+function exportCSV(){
+  const rows=[['Player','Team','Price','Category','Time'],...state.sales.map(s=>[s.player_name,findTeam(s.team_id)?.name||'',s.sold_price,s.category,s.created_at])];
+  const csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='SPL-'+currentSport+'-auction-history.csv';a.click();URL.revokeObjectURL(a.href);
+}
+
+/* ================= BUTTON EVENTS ================= */
 $('loginBtn').onclick=login;
-
-$('password').addEventListener('keydown',e=>{
- if(e.key==='Enter')login();
-});
-
-$('logoutBtn').onclick=async()=>{
- await db.auth.signOut();
- location.reload();
+$('loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')login()});
+$('logoutBtn').onclick=logout;
+$('logoutFromSport').onclick=logout;
+document.querySelectorAll('[data-sport]').forEach(b=>b.onclick=()=>chooseSport(b.dataset.sport));
+$('switchSport').onclick=()=>{if(realtimeChannel)db.removeChannel(realtimeChannel);showSportSelect()};
+$('startAuction').onclick=startAuction;
+$('pauseAuction').onclick=pauseAuction;
+$('soldBtn').onclick=()=>finishAuction('SOLD');
+$('unsoldBtn').onclick=()=>finishAuction('UNSOLD');
+$('undoBid').onclick=undoLastBid;
+$('nextPlayer').onclick=()=>{
+  const waiting=state.players.filter(p=>['available','unsold'].includes(p.status)&&p.id!==state.current_player_id);
+  if(!waiting.length){$('queueList').scrollIntoView({behavior:'smooth'});return}
+  selectPlayer(waiting[0].id);
 };
-
-document.querySelectorAll('[data-tab]').forEach(b=>{
- b.onclick=()=>switchTab(b.dataset.tab);
-});
-
-$('quickSearch').oninput=renderQuick;
-$('playerSearch').oninput=renderPlayers;
-$('playerFilter').onchange=renderPlayers;
-
-$('addPlayerBtn').onclick=()=>addPlayer().catch(e=>msg(e.message,true));
-$('addTeamBtn').onclick=()=>addTeam().catch(e=>msg(e.message,true));
-$('saveSettings').onclick=()=>saveSettings().catch(e=>msg(e.message,true));
-
-$('saveTitle').onclick=async()=>{
- const title=$('auctionTitle').value.trim();
- if(!title)return msg('Enter an auction title.',true);
-
- const {error}=await db.from('auction_sessions').update({
-  title
- }).eq('id',auctionId());
-
- if(error)return msg(error.message,true);
-
- await loadAll();
- msg('Title saved.');
+$('playerForm').addEventListener('submit',addPlayer);
+$('exportCsv').onclick=exportCSV;
+$('openDisplay').onclick=()=>window.open(location.pathname+'?display=1','spldisplay');
+$('exitDisplay').onclick=()=>{location.href=location.pathname};
+$('downloadCard').onclick=downloadCard;
+['closeModal','closeModal2'].forEach(id=>$(id).onclick=()=>$('soldModal').classList.add('hidden'));
+$('resetDemo').onclick=async()=>{
+  if(!confirm('Reset this sport auction? This will clear its auction activity and restore team budgets.'))return;
+  if(!confirm('Are you sure? This action cannot be undone.'))return;
+  try{
+    const {error:playerError}=await db.from('players').update({status:'available',team_id:null,sold_price:null}).eq('auction_id',auctionId);
+    if(playerError)throw playerError;
+    const {error:salesError}=await db.from('sales').delete().eq('auction_id',auctionId);
+    if(salesError)throw salesError;
+    const {error:bidsError}=await db.from('bids').delete().eq('auction_id',auctionId);
+    if(bidsError)throw bidsError;
+    const updates=state.teams.map(t=>db.from('teams').update({remaining_budget:t.initial_budget||100000000}).eq('id',t.id).eq('auction_id',auctionId));
+    const results=await Promise.all(updates);
+    const bad=results.find(r=>r.error);if(bad)throw bad.error;
+    await updateAuctionState({current_player_id:null,leading_team_id:null,current_bid:0,is_paused:false});
+    bidUndo=[];lastSale=null;await loadAuction();message('Auction reset completed.');
+  }catch(e){message('Reset failed: '+e.message)}
 };
+document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>openView(b.dataset.view));
 
-$('soldBtn').onclick=()=>finish('sold').catch(e=>msg(e.message,true));
-$('unsoldBtn').onclick=()=>finish('unsold').catch(e=>msg(e.message,true));
-$('undoBidBtn').onclick=()=>undoBid().catch(e=>msg(e.message,true));
-
-$('pauseBtn').onclick=async()=>{
- if(!state)return msg('Auction state is not loaded.',true);
-
- const {error}=await db.from('auction_state').update({
-  is_paused:!state.is_paused,
-  updated_at:new Date().toISOString()
- }).eq('auction_id',auctionId());
-
- if(error)return msg(error.message,true);
-
- await loadAll();
-};
-
-$('clearPlayerBtn').onclick=async()=>{
- if(!confirm('Clear current player from auction screen?'))return;
-
- const {error}=await db.from('auction_state').update({
-  current_player_id:null,
-  leading_team_id:null,
-  current_bid:0,
-  updated_at:new Date().toISOString()
- }).eq('auction_id',auctionId());
-
- if(error)return msg(error.message,true);
-
- await loadAll();
-};
-
-$('refreshHistory').onclick=()=>loadAll().catch(e=>msg(e.message,true));
-$('projectorBtn').onclick=openProjector;
-$('exitProjector').onclick=closeProjector;
-
-$('projectorCopy').onclick=()=>{
- const url=location.origin+location.pathname+'?view=projector';
-
- if(navigator.clipboard?.writeText){
-  navigator.clipboard.writeText(url)
-  .then(()=>msg('Projector link copied.'))
-  .catch(()=>msg('Copy failed. Copy this address manually: '+url,true));
- }else{
-  msg('Projector link: '+url);
- }
-};
-
-// Restore existing admin session
-(async()=>{
- try{
-  const {data:{session:s},error}=await db.auth.getSession();
-  if(error)throw error;
-
-  if(s){
-   await adminCheck();
-   await boot();
+/* ================= APP START ================= */
+async function init(){
+  const {data:{session}}=await db.auth.getSession();
+  if(session){
+    currentUser=session.user;
+    try{
+      await checkAdmin();
+      if(new URLSearchParams(location.search).get('display')==='1'){
+        /* Same signed-in browser profile can open projector display. */
+        currentSport=localStorage.getItem('spl-active-sport')||'cricket';
+        auctionId=currentSport==='football'?FOOTBALL_ID:CRICKET_ID;
+        showDisplay();
+        await loadAuction();
+        subscribeRealtime();
+      }else showSportSelect();
+    }catch(e){await db.auth.signOut();showLogin();setLoginMessage(e.message)}
+  }else{
+    if(new URLSearchParams(location.search).get('display')==='1'){
+      showLogin();
+      setLoginMessage('Please sign in with the authorised admin account to open this display.');
+    }else showLogin();
   }
- }catch(e){
-  await db.auth.signOut();
-  $('loginBox').classList.remove('hidden');
-  $('main').classList.add('hidden');
-  loginMsg(e.message||String(e));
- }
-})();
-
-})();
+}
+document.querySelectorAll('[data-sport]').forEach(b=>{
+  b.addEventListener('click',()=>localStorage.setItem('spl-active-sport',b.dataset.sport));
+});
+init();
 </script>
 </body>
 </html>
